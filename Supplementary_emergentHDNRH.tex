@@ -1,0 +1,324 @@
+\documentclass[prl,aps,twocolumn,nosuperscriptaddress,bibnotes,notitlepage,nofootinbib]{revtex4-2}
+
+\usepackage[utf8]{inputenc}
+%\usepackage{newtxtext, newtxmath}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{subfigure}
+\usepackage{color}
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{caption}
+%\usepackage{subcaption}
+\usepackage[normalem]{ulem}
+\newcommand{\magg}{\mathbf{M}}
+\newcommand{\stagg}{\mathbf{N}}
+\newcommand{\spin}{\mathbf{S}}
+\newcommand{\Epseudo}{\tilde{\mathcal{E}}}
+\newcommand{\abc}{\alpha \beta \gamma}
+\newcommand{\comnt}[1]{\ignorespaces} 
+
+\newcommand{\SR}[1]{\textcolor{magenta}{#1}}
+\newcommand{\remarkSR}[1]{\textcolor{magenta}{\tt #1}}
+\newcommand{\SM}[1]{\textcolor{red}{#1}}
+\newcommand{\remarkSM}[1]{\textcolor{red}{\tt #1}}
+\newcommand{\NB}[1]{\textcolor{cyan}{#1}}
+\newcommand{\comntNB}[1]{\textcolor{cyan}{\tt #1}}
+%\usepackage{xr-hyper}
+\usepackage{hyperref}
+%\externaldocument[]{emergentHD_NRHeisenberg}% <- full or relative path
+\begin{document}
+
+\title{Emergent hydrodynamics in a non-reciprocal classical isotropic magnet: Supplementary material}
+
+\maketitle
+%\section{Supplementary material} 
+\renewcommand{\theequation}{S.\arabic{equation}}
+\setcounter{equation}{0}
+
+\subsection*{Derivation of the hydrodynamic equations}
+The equations of motion for the odd and even spins are 
+ \begin{align}
+ \label{eqn:motion}
+ \begin{split}    
+ \dot{\spin}_{2i} = \spin_{2i} \times (\spin_{2i+1} - \spin_{2i-1}) \\
+\dot{\spin}_{2i+1} = \spin_{2i+1} \times (\spin_{2i+2} - \spin_{2i})
+\end{split}
+\end{align}
+We define the local magnetization $\magg_i$ and the local staggered magnetization $\stagg_i$ on the bond connecting spins $\spin_{2i}$ and $\spin_{2i+1}$ as
+\begin{align}
+\label{eqn:defMN}
+\begin{split}
+\magg_i & = \frac{\spin_{2i} + \spin_{2i+1}}{2} \\
+\stagg_i & = \frac{\spin_{2i} - \spin_{2i+1}}{2}
+\end{split}
+\end{align}
+Using eqns.(~\ref{eqn:motion}) and (~\ref{eqn:defMN}), we can write down the equations of motion for $\magg_i$ and $\stagg_i$
+
+\begin{align}
+    \label{eqn:contnutMN_discrete}
+    \begin{split}
+        \dot{\magg}_i &= \magg_i \times \Delta \magg_i - \stagg_i \times \Delta \stagg_i \\
+        \dot{\stagg}_i &= \stagg_i \times \Delta \magg_i - \magg_i \times \Delta \stagg_i, 
+    \end{split}
+\end{align}
+where 
+\begin{align*}
+\begin{split}
+\Delta \magg_i &= \magg_i - \magg_{i-1} \\
+\Delta \stagg_i &= \stagg_i - \stagg_{i-1}
+\end{split}
+\end{align*}
+
+Taking the continuum limit of Eqn.(~\ref{eqn:contnutMN_discrete}) retaining only the first order terms, we obtain the hydrodynamic equations for $\magg$ and $\stagg$.
+\begin{align}
+\label{eqn:contnuteqn_puredrvn}
+\begin{split}
+\partial_t \magg &=  \magg \times \partial_x \magg  - \stagg \times \partial_x \stagg \\
+\partial_t \stagg &= \partial_x (\stagg \times \magg) 
+\end{split}
+\end{align}
+The local pseudo-energy is
+\begin{align*}
+\begin{split}
+\Tilde{\mathcal{E}}_i &= \frac{1}{2}\left[\spin_{2i}.\left(\spin_{2i-1}- \spin_{2i+1}\right) \right]
+\end{split}
+\end{align*} 
+from which we obtain 
+\begin{align*}
+\begin{split}
+\partial_t \Tilde{\mathcal{E}}_i &= J^E_i - J^E_{i+1},
+\end{split}
+\end{align*}
+where 
+\begin{align*}
+\begin{split}
+J^E_i &= \frac{\spin_{2i-1}}{2}.\left(\spin_{2i} \times \spin_{2i-2}\right)
+\end{split}
+\end{align*}
+
+Writing the pseudo-energy equations in terms of $\magg_i$ and $\stagg_i$ and taking the continuum limit,
+\begin{align*}
+    \Tilde{\mathcal{E}} &=-\frac{1}{2} \left(\magg + \stagg \right)\cdot \partial_x \left(\magg - \stagg \right) 
+\end{align*}
+and using the following equations based on  (~\ref{eqn:contnuteqn_puredrvn}),
+\begin{align*}
+    \partial_t (\magg + \stagg) = (\magg + \stagg) \times \partial_x (\magg - \stagg) \\
+    \partial_t (\magg - \stagg) = (\magg - \stagg) \times \partial_x (\magg + \stagg)
+\end{align*}
+we obtain 
+\begin{align}
+\begin{split}
+\partial_t \Tilde{\mathcal{E}} &= -\frac{1}{2} \partial_t(\magg + \stagg) \cdot \partial_x (\magg - \stagg) \\
+ &- \frac{1}{2}(\magg + \stagg) \cdot \partial_x \left(\partial_t(\magg - \stagg) \right) \\
+ &= -\frac{1}{2} (\magg + \stagg) \cdot \partial_x \left ((\magg - \stagg) \times \partial_x (\magg + \stagg) \right) \\
+		&= -\frac{1}{2} \partial_x \left( (\magg + \stagg) \cdot \left((\magg - \stagg) \times \partial_x (\magg + \stagg)\right) \right) \\
+  &= \partial_x \left( (\magg \times \stagg) \cdot \partial_x (\magg + \stagg) \right)
+\end{split} 
+\label{eqn:pseudo}
+   \end{align}
+where we observe in the last step that triple products of the form $\partial_x(\magg + \stagg) \cdot (\magg \times \magg - \stagg \times \stagg)$ will be zero. The final equation above gives us the Eqn. (4) of the main paper.
+
+
+\subsection*{The evolution of the magnetization and staggered magnetization}
+Before we proceed, we show the diffusion behaviour in $\stagg$-dynamics can be obtained, to a first order approximation, from the steady state description of $\magg $ ($\partial_t \magg = 0$):
+\begin{align}
+    \begin{split}
+    \magg & \approx -\tau (\stagg \times \partial_x \stagg) \\
+    \partial_t \stagg &= \partial_x(\stagg \times \magg) + \mathbf{\zeta}\\
+\Rightarrow \partial_t \stagg  &\approx -\tau \partial_x (\stagg \times (\stagg \times \partial_x \stagg)) + \boldsymbol{\zeta}  \\
+    &= \tau \partial_x (\stagg^2(\mathbf{1} - \hat{\stagg}\hat{\stagg} \cdot ) \partial_x \stagg) + \boldsymbol{\zeta }
+    \end{split}
+    \label{eqn:Diffeqn_stagg}
+\end{align}
+The interesting behaviour of the magnetization is captured in the transient state. We evaluate the non-reciprocal dynamics for initial states with a non-zero magnetization: a small periodic modulation of the spins is added to a perfectly aligned state. It can be seen from Fig.(~\ref{fig:Mkt_decayvs_t}) that it decays fairly rapidly to zero for different values of the modulation wavenumber $k$. Further, the relaxation of the magnetization in the limit $k \rightarrow 0$ in a finite time is consistent with our assumption of a finite $\tau$ arising from the hydrodynamics. This can be seen in the form of a fairly rapid relaxation of the magnetization for the lowest value of $k$ (=1) possible in our numerics. A description of the structure (bounces) in the early time behavior of the magnetization is beyond the scope of the hydrodynamic framework.\\
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.34]{Mt_t_1600minus300_q123456.pdf}
+\caption{\small The evolution of $|\magg(t)| = |\sum_i {\bf S}_i(t)|$ with time for different initial states of the form ${\bf S}_i(t=0) = \delta M \cos(2 \pi k i/L) \hat{e}_1 + \delta M \sin(2 \pi k i/L) \hat{e}_2 + M \hat{e}_3$. These represent states with a uniform value $M$ of one component of the spin with a modulation of strength $\delta M$ and wavevector $k$ of the other two components. The initial states thus have a total non-zero magnetization. It can be seen that this magnetization decays to zero as a function of time consistent with a non-zero decay time. The features (bounces) in the early time behavior are transients that cannot be captured by the hydrodynamic theory.}
+\label{fig:Mkt_decayvs_t}
+\end{figure}
+
+\subsection*{Perturbation calculation for Self-energy terms}
+We write the $\magg$-dynamics in the Fourier space, keeping the relaxation term but leaving out the non-linear contributions to zeroth order. 
+\begin{align}
+    \begin{split}
+    (-i \omega  +\frac{1}{\tau}) M^{\alpha} &=  \xi^{\alpha} \\
+    G_{M0}^{\alpha \beta} &= (-i \omega  +\frac{1}{\tau})^{-1} \delta^{\alpha \beta}
+    \end{split}
+    \label{eqn:M0propg}
+\end{align}
+
+The non-linear terms are introduced as perturbations, which contribute to the relaxation of $\magg$ through a self-energy term.
+\begin{align}
+    \begin{split}
+    (-i \omega  +\frac{1}{\tau}) M(q, \omega)^{\alpha} &=  iq (u_M \epsilon^{\alpha \beta \gamma} M^{\beta} M^{\gamma} - u_N \epsilon^{\alpha \beta \gamma} N^{\beta} N^{\gamma})\\
+    & +\xi^{\alpha}
+    \end{split}
+    \label{eqn:M1propg}
+\end{align}
+
+Similarly, writing the $\stagg$-dynamics in the Fourier space to the zeroth order
+\begin{align}
+    \begin{split}
+    (-i \omega + Dq^2) N^{\alpha} &=  \zeta^{\alpha} \\
+    G_{N0}^{\alpha \beta} &= (-i \omega  +Dq^2)^{-1} \delta^{\alpha \beta}
+    \end{split}
+    \label{eqn:N0propg}
+\end{align}
+
+and then adding the perturbation
+\begin{align}
+    (-i \omega  +Dq^2) N(k, \omega)^{\alpha} &=  iq (u_{MN} \epsilon^{\alpha \beta \gamma} N^{\beta} M^{\gamma} )+ \zeta^{\alpha}
+    \label{eqn:N1propg}
+\end{align}
+
+We write the magnetization correlation function from the non-conserving noise
+\begin{align}
+    \label{eqn:magg_correlation_ft}
+    \langle M^{\alpha} (q, \omega) M^{\beta} (q', \omega') \rangle =  \dfrac{4 \pi^2 A_M}{\omega^2 + \tau^{-2}} \delta^{\alpha \beta} \delta(q+q')  \delta (\omega + \omega')
+\end{align}
+
+The staggered magnetization correlation function is similarly:
+\begin{align}
+    \label{eqn:stagg_correlation_ft}
+    \langle N^{\alpha} (q, \omega) N^{\beta} (q', \omega') \rangle =  \dfrac{4 \pi^2 A_N q^2}{\omega^2 + (Dq^2)^2} \delta^{\alpha \beta} \delta(q+q')  \delta (\omega + \omega')
+\end{align}
+
+Evaluating the propagator involves adding corrections from the higher resolution in the perturbation terms:
+\begin{align*}
+    G(q,\omega) = G_0 (q, \omega) + G_0 (q, \omega) \Sigma G (q, \omega)
+\end{align*}
+The propagators for $\magg$ and $\stagg$ are of the form $ \displaystyle G (q,\omega)= \frac{1}{-i\omega + \Sigma(q,\omega)}$, where $\Sigma(q,\omega)$ is the self energy.  The self energy for $\magg$, $\Sigma_M(q=0,\omega=0) = -1/\tau$ since $\magg$ is not a conserved field of the dynamics and is thus expected to relax. The self energy for $\stagg$, $\Sigma_N(q \rightarrow 0,\omega=0) = -Dq^2$ as $\stagg$ is conserved and thus expected to display diffusion. The structure of the propagator $G_{N0}(q, \omega) $ dictates that each power of $\omega$ goes with -2 powers of $q$. Similar correspondence must hold for $G_N(q, \omega) $ as well if the perturbation series is to converge in the $q, \omega \rightarrow 0$ limit.\\
+
+We can obtain $\tau$ and $D$ in terms of the other parameters in eqns.(~\ref{eqn:M0propg}- ~\ref{eqn:N1propg}) self-consistently by calculating the above-mentioned self energies. This calculation to one loop is described below. The relevant diagrams are shown in Fig.(~\ref{fig:oneloop_supp}).  It can be seen that each diagram is given by sums of involving integrals of the form
+
+\begin{align*}
+    u_1 u_2 \int \int \dfrac{(\alpha_1 q + \beta_1 p)(\alpha_2 q + \beta_2 p)f(p)}{(\nu^2 + g(p)^2)(-i \nu + h(p))}~d\nu dp
+\end{align*}
+where $f(p)= \{A_M, A_N p^2 \}$, $g(p)= \{(Dp^2)^2,  \tau^{-1}\}$, $h(p)= \{Dp^2 , \tau^{-1}\}$, $u_1, u_2 = \{u_M, u_N, u_{MN} \}$. $\alpha_1$, $\beta_1$, $\alpha_2$ and $\beta_2$ are numerical constants and $p$ and $\nu$, the internal wavenumber and frequency. The factors in the denominator of the integrand come from the propagators, the factor $f(p)$ from the noise correlator and the other two factors of the form $\alpha q + \beta p$ come from the two vertices in each diagram since each is linear in the momenta of the associated propagators. The different integrals that contribute to a particular diagram are obtained from the different ways of dividing the external wavenumber $q$ and frequency $\omega$ into the wavenumbers $p$ and $q-p$ and frequencies $\nu$ and $\omega-\nu$ of the propagators in the loop in addition to choosing the different components of the vector fields $\magg$ and $\stagg$ in the loop. We are also only interested only in the leading order dependence in the ultraviolet cutoffs and so have replaced the propagators in the loop with their low wavenumber and low frequency forms and have taken the external frequency $\omega$ to be zero. As mentioned in the main text, numerical pre-factors from the above integrals can be absorbed into the definitions of the coupling strengths $u_M$, $u_N$ and $u_{MN}$ and the noise strengths $A_M$ and $A_N$. Thus, the contribution of each diagram can be obtained from a simple power counting of the contributing integrals. Performing the relevant integrals over the frequencies $\nu$ for each diagram and adding, we obtain 
+
+\begin{align}
+\label{eqn:loop_int}
+   \Sigma (q,\omega=0) \sim - u_1 u_2 \int_{-\Lambda}^\Lambda \dfrac{(Eq^2 + Fp^2)f(p)}{g(p) \left[g(p)+h(p)\right]}dp,
+\end{align}
+for each of the diagrams in Fig.(~\ref{fig:oneloop_supp}), where $\Lambda$ is the ultraviolet cutoff for the wavenumber and $E$ and $F$ are numerical constants. Since, $f(p)$, $g(p)$ and $h(p)$ are all even functions of $p$, there are no terms linear in $p$ in the numerator of the integrand. 
+
+The diagrams in the top row of Fig.(~\ref{fig:oneloop_supp}), contribute to $\Sigma_M$. For these, we set $q=0$ in Eqn.(~\ref{eqn:loop_int}). For the diagram on the left, $u_1=u_2=u_M$, $f(p)=A_M$, $g(p)=h(p)=\tau^{-1}$, producing
+a contribution
+\begin{align*}
+   -u_M^2 A_M \tau^2 \int_{-\Lambda}^\Lambda p^2 dp \sim -u_M^2 A_M \tau^2 \Lambda^3
+\end{align*}
+For the diagram on the right, $u_1=u_N$, $u_2=u_{MN}$ $f(p)=A_Np^2$, $g(p)=Dp^2$,$h(p)=\tau^{-1}$, which gives
+\begin{align*}
+   -u_N u_{MN} \frac{A_N}{D} \int_{-\Lambda}^\Lambda \frac{p^2} {Dp^2 + \tau^{-1}}dp \sim -u_N u_{MN} A_N \frac{\Lambda}{D^2}
+\end{align*}
+Thus, we obtain the first of the two self-consistent equations 
+\begin{align*}
+\frac{1}{\tau} &= u_M^2A_M\tau^2\Lambda^3 + u_N u_{MN}A_N\Lambda/D^2
+\end{align*}
+
+The diagrams in the bottom row of Fig.(~\ref{fig:oneloop_supp}), contribute to $\Sigma_N$. For these, it turns out that $F=0$ and so they give contributions $\sim q^2$ as expected from the diffusive behavior of $\stagg$. For the diagram on the left, $u_1=u_2=u_{MN}$, $f(p)=A_M$, $g(p)=\tau^{-1}$ and $h(p)=Dp^2$, yielding
+\begin{align*}
+   -q^2u_{MN}^2 A_M \tau \int_{-\Lambda}^\Lambda \frac{1}{Dp^2+\tau^{-1}} dp \sim -q^2u_{MN}^2A_M\sqrt{\frac{\tau^3}{D}}
+\end{align*}
+Finally, for the diagram on the right, $u_1=u_{MN}$, $u_2=u_N$ $f(p)=A_Np^2$,  $g(p)=Dp^2$, $h(p)=\tau^{-1}$, giving
+\begin{align*}
+-q^2u_{MN}u_N \frac{A_N}{D} \int_{-\Lambda}^\Lambda \frac{1} {Dp^2 + \tau^{-1}} dp \sim -q^2u_Nu_{MN}A_N \sqrt{\frac{\tau}{D^3}}
+\end{align*}
+From these we obtain the other self-consistent equation
+\begin{align*}
+D & = u_{MN}^2A_M\sqrt{\frac{\tau^3}{D}} + u_Nu_{MN}A_N \sqrt{\frac{\tau}{D^3}}.
+\end{align*}
+
+%%% Supplementary figure 0
+\begin{figure}[H]
+\centering
+\begin{subfigure}%{\columnwidth}
+  \centering
+  \includegraphics[width=\columnwidth]{FeynmanG_supp.pdf}
+\end{subfigure}
+\caption{\small Vertex nodes for the self-energy terms for [\textit{Top}]: $\Sigma_M$ - incoming vertices are from $\magg$ , [\textit{Bottom}]: $\Sigma_N$ - incoming vertices are from $\stagg$; the circled cross depicts the conserved noise $\boldsymbol{\zeta}$ of strength $A_N$, and the open cross the non-conserved noise $\boldsymbol{\xi}$ with strength $A_M$.  }
+\label{fig:oneloop_supp}
+\end{figure}
+
+%%%%%% %%%%%%
+%%% Supplementary Figure 2
+%%%%%% %%%%%%
+
+\begin{figure*}[htp]
+\centering
+\subfigure{\includegraphics[scale=0.28]{Cxt_vs_x_L512_qwhsbg_diffcollapse.pdf}}
+\quad \quad 
+\subfigure{\includegraphics[scale=0.28]{CExt_vs_x_L512_qwhsbg_diffcollapse.pdf}}
+\caption{\small Two-point correlation functions of: (a) the standard magnetization, $C_{M}(x,t)$ and (b) the energy , $C_{E}(x,t)$ evaluated for the Heisenberg model. $x \in \{1,L\}$ for $L=512$, and over 5000 initial configurations sampled for averaging.  The left inset of both panels shows the scaling collapse to a form $C(x,t) = t^{-1/2}f(x/t^{1/2})$ consistent with diffusion while the right shows a plot of $C(0,t)$ versus $t$ with a fit to $t^{-1/2}$.}
+\label{fig:MM_E_corrxt}
+\end{figure*}
+
+
+%% Comment OVER, from line 188
+
+%%%%%% %%%%%%
+%%% Supplementary Figure 3
+%%%%%% %%%%%%
+\begin{figure*}[htp]
+\centering
+\subfigure{\includegraphics[scale=0.4]{Dxt_L2048_qwhsbg_emin3_dt_1emin3.png}}
+\quad \quad
+\subfigure{\includegraphics[scale=0.41]{logDxt_annottd_qwhsbg_40tinit.pdf}}
+ \caption{\small \textit{(Left)} Colormap of the decorrelator $D(x,t)$ calculated by averaging over pairs of initial conditions that differ only in the value of the spin ${\bf S}$ at the site $x=0$. It can be seen that this initial disturbance spreads ballistically from which the butterfly velocity $v_B=1.66$ can be obtained. \textit{(Right)} The decorrelator given by the expression $\log(D(x,t)/\varepsilon^2) = 2 \kappa t (1 - (x/v_Bt)^2)$ plotted as a function of $x/t$ for different values of $t$. As expected, it can be seen that there is a collapse of the curves in the vicinity of the front from which the Lyapunov exponent $\approx 0.49$ can be extracted. The inset shows $D(x,t)$ as a function of $x$ for different values of $t$. The existence of a front can be seen from the rapid decrease in the value of $D(x,t)$ as a function of $t$ (inset).}
+  \label{fig:Dxt_logDxt_hsbg}
+\end{figure*}
+
+
+\section*{Comparison with the Heisenberg dynamics}
+To test the accuracy of our numerical code, we first ran the simulation for the Hamiltonian originating Heisenberg dynamics and obtained results for the conserved quantities, namely the standard magnetization and energy density. We confirmed that the conserved quantities show diffusive behaviour (Fig.~\ref{fig:MM_E_corrxt}) , thus setting up a standard to corroborate our results with. We also calculated the numerical values for the butterfly velocity and Lyapunov exponent for this case, and found them to be within expected error range of our simulation parameters, $v_B = 1.66(\pm 0.02) , \kappa = 0.49 (\pm 0.02)$ (Fig. ~\ref{fig:Dxt_logDxt_hsbg}), with $\varepsilon = 10^{-3}, L = 2048, \Delta t = 0.001-0.002$.  Finding $\kappa$ from the expression $\log(D(x,t)/\varepsilon^2) = 2 \kappa t (1 - (x/v_Bt)^2)$  requires knowledge of $D(0,t)$ but the perturbation strength $(10^{-3})$ is not small enough for the numerics to find an appreciable jump in $\log(D(x,t)/\varepsilon^2)$ from $t=0$ itself, as evident from the inset of the plot.\\ 
+
+Finally, we also find the power-law associated with the broadening of the decorrelator front (Fig.~\ref{fig:Arrivaltime_sup}). The approach here involves comparing the Decorrelator to a threshold value, $D_{0} = 100 \varepsilon^2$ and mark the time at which the single configuration arrival-front exceeds this threshold value, $D(x,t) \geq D_{0}$. 
+% (Note: $100 \varepsilon^2$ works much better as a threshold than $100 \varepsilon$ as mentioned in  \cite{das2018light}). 
+Collecting this data for several samples ($\sim 10^4$) we see that the arrival-front of the decorrelator broadens with time. The distribution of the arrival-times from the mean arrival-time (the slope of which with respect to the position is just the inverse arrival velocity), shows a collapse when fit to a $1/3$ power-law.
+
+
+
+
+%%%%%% %%%%%%
+%%% Supplementary Figure 4
+%%%%%% %%%%%%
+\begin{figure*}[htp]
+\centering
+  \subfigure{\includegraphics[scale=0.28]{avg_arrivaltime_vs_x_2048_qwhsbg_epsq_Dth100_16bins.pdf}}           \quad \quad  \quad
+  %\caption{This is the second figure}
+  \subfigure{\includegraphics[scale=0.28]{avg_arrivaltime_vs_x_2048_qwdrvn_dt2emin3_epsq_Dth100_16bins.pdf}}
+\caption{\small \textit{(Left, Right:)} Arrival-time plots for the Heisenberg and our driven model respectively. \textit{(Main panel:)}  Arrival times $t_{D_0}$ for the decorrelator front at a given site $x$, for $D_{0} = 100 \varepsilon^2 = 10^{-4}$. The central black line is the average of such arrival times calculated for individual configurations (grey scatter plot), whose slope gives us $v_B \approx 1.66, 1.35$ respectively. (\textit{Upper inset:}) The distributions of arrival times centered at the mean show diminishing peak and broadening variance with higher values of $x$. \textit{(Lower inset:)} The probability distribution functions (p.d.f.s) collapse when scaled with respect to site as $x^{1/3}$. A gaussian fit to the fluctuations is plotted for each case, with $\langle t_{D_0} \rangle$ centered at $x=600, 350$ for the Heisenberg, driven models respectively.}
+\label{fig:Arrivaltime_sup}
+\end{figure*}
+
+\subsection*{Liouville's Theorem holds for the generalized nearest-neighbour precessional dynamics }
+
+The canonical dynamics of SO(3) spins on a lattice is governed by
+\begin{align}
+    \label{eqn:canonical_dyn}
+    \dfrac{d S_{i}^{\alpha}}{dt} &= \sum_{\beta \gamma}\epsilon_{\alpha \beta \gamma}S_i^{\beta}\dfrac{\partial H}{\partial S_i^{\gamma}}
+\end{align}
+
+so that
+\begin{align}
+    \sum_{\alpha} \dfrac{\partial \dot{S}_i^{\alpha}}{\partial S_i^{\alpha}} = \sum_{\alpha \beta \gamma} \epsilon_{\alpha \beta \gamma}\left(\dfrac{\partial S_i^{\beta}}{\partial S_i^{\alpha}}\dfrac{\partial H}{\partial S_j^{\gamma}} + S_i^{\beta}\dfrac{\partial^2 H}{\partial S_i^{\alpha} \partial S_i^{\gamma}}\right)
+\end{align}
+The terms in the parenthesis being symmetric in $\alpha \beta$ and $\alpha \gamma$ are eliminated by $\epsilon_{\alpha \beta \gamma}$. Thus the velocity in $S$-space is divergence free.
+
+This argument holds true even for the generalized dynamics:
+\begin{align*}
+\dot{S}_{i \alpha} = \epsilon_{\abc}S_{i \beta}(S_{i+1 \gamma} \pm S_{i-1 \gamma})    
+\end{align*}
+
+\begin{align}
+    \sum_{\alpha} \dfrac{\partial \dot{S}_i^{\alpha}}{\partial S_i^{\alpha}} = \sum_{\abc} \epsilon_{\abc}\left(\dfrac{\partial S_i^{\beta}}{\partial S_i^{\alpha}} (S_{i+1 \gamma} \pm S_{i-1 \gamma}) \right)
+\end{align}
+The above term vanishes since $\dfrac{\partial S _{j \alpha}}{\partial S_{i \beta}} = 0 $ for any $ \alpha, \beta, i \neq j$. \cite{2208.08577} presented a similar argument in their work on non-reciprocal spin models, starting with the Landau-Lifshitz equation. 
+
+%\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

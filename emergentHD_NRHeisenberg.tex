@@ -1,0 +1,234 @@
+\documentclass[prl,aps,twocolumn,nosuperscriptaddress,bibnotes,notitlepage,nofootinbib]{revtex4-2}
+
+\usepackage[utf8]{inputenc}
+%\usepackage{newtxtext, newtxmath}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{subfigure}
+\usepackage{color}
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{caption}
+%\usepackage{subcaption}
+\usepackage[normalem]{ulem}
+%\usepackage[noabbrev]{cleveref}
+\newcommand{\magg}{\mathbf{M}}
+\newcommand{\stagg}{\mathbf{N}}
+\newcommand{\spin}{\mathbf{S}}
+\newcommand{\Epseudo}{{\mathcal{E}}}
+\newcommand{\abc}{\alpha \beta \gamma}
+\newcommand{\comnt}[1]{\ignorespaces} 
+
+\newcommand{\SR}[1]{\textcolor{magenta}{#1}}
+\newcommand{\remarkSR}[1]{\textcolor{magenta}{\tt #1}}
+\newcommand{\SM}[1]{\textcolor{red}{#1}}
+\newcommand{\remarkSM}[1]{\textcolor{red}{\tt #1}}
+\newcommand{\NB}[1]{\textcolor{cyan}{#1}}
+\newcommand{\comntNB}[1]{\textcolor{cyan}{\tt #1}}
+
+%\usepackage{xr-hyper}
+\usepackage[colorlinks=true,linkcolor = blue,
+            urlcolor  = blue,
+            citecolor = blue,
+            anchorcolor = blue]{hyperref}
+%\externaldocument[]{Supplementary_emergentHDNRH}% <- full or relative path
+
+\begin{document}
+
+\title{Emergent hydrodynamics in a non-reciprocal classical isotropic magnet}
+
+\author{Nisarg Bhatt}
+\email{bhatt@iisc.ac.in}%\affiliation{Centre for Condensed Matter Theory, Department of Physics, Indian Institute of Science, Bangalore 560 012, India}
+\author{Subroto Mukerjee}
+\email{smukerjee@iisc.ac.in}
+\author{Sriram Ramaswamy}
+\email{sriram@iisc.ac.in}
+\affiliation{Centre for Condensed Matter Theory, Department of Physics, Indian Institute of Science, Bangalore 560 012, India}
+
+%%%-----------
+% ABSTRACT
+%%%-----------
+\begin{abstract}
+The Hamiltonian nature of the precessional dynamics of the classical Heisenberg model leads to reciprocal interactions amongst the spins. Heisenberg spins is reciprocal in nature. 
+In this work, we study the dynamics of a nonequilibrium classical 
+spin chain in which 
+the neighbours interact through a purely non-reciprocal exchange coupling [\href{https://iopscience.iop.org/article/10.1209/epl/i2002-00280-2}{EPL \textbf{60}, 418 (2002)}] which preserves rotational symmetry. The resultant dynamics conserves neither magnetization nor energy. We uncover other local conservation laws in their place in the extreme case of a strictly antisymmetric coupling. We show
+numerically that the model undergoes an analogue of thermalization. We present results on the presence of conserved quantities, their diffusive spreading and a hydrodynamic picture, and the nature of the decorrelation front upon adding an initial perturbation to the system.
+
+\end{abstract}
+\maketitle
+
+\paragraph{Introduction:} Effective interactions that evade Newton's 3rd Law are ubiquitous in living or driven matter \cite{das2002driven,ivlev2015statistical,dadhichi2020nonmutual,SSaha_etalPRX2020,you2020nonreciprocity,CahnHilliardnonvarcoupling2021,PhysRevLett.104.178103}.
+The importance of such non-reciprocity (hereafter NR) has long been appreciated in the context of learning and associative memory \cite{parisi1986asymmetric, PhysRevE.86.011909}, and the subject is currently experiencing a resurgence of interest \cite{fruchart2021non, bowick2022symmetry, shamikgupta2019}.
+
+The breaking of reciprocity leads to a host of highly original effects including oscillations and travelling waves without inertia, advection without a velocity, pursuit-and-capture behaviour, and exceptional-point phase transitions 
+\cite{ PhysRevLett.106.054102, PhysRevLett.117.248001, PhysRevE.99.012612, PhysRevLett.122.185301, PhysRevResearch.2.033018, Galda2019}. 
+An early study \cite{das2002driven} explored criticality, chaos and control in the reversible precessional dynamics of a lattice of classical Heisenberg spins, with distinct exchange couplings for right and left neighbours. It was argued \cite{das2002driven} that this manifestly non-reciprocal and non-Hamiltonian dynamics should arise generically in the presence of a sustained energy throughput, if the underlying lattice was non-centrosymmetric. 
+
+The \textit{canonical} dynamics of classical Heisenberg spins \cite{ma1975critical} $\{\spin_i\}$ on a lattice  consists of Larmor precession: $d\spin_i/dt = \gamma \spin_i \times \mathbf{h}_i$, 
+where $\gamma$ is the gyromagnetic ratio and the local magnetic field $\mathbf{h}_i = \partial H / \partial \spin_i$ arises from interactions with neighboring spins through a Hamiltonian $H = - \sum_{i,j}J_{ij}\spin_i \cdot \spin_j$. The reciprocal nature of this dynamics is clear: the torque on spin $i$ due to spin $j$ is precisely the negative of that on $j$ due to $i$. The model of \cite{das2002driven} amounts to retaining precessional dynamics, with $\mathbf{h}_i = \sum_j J_{ij} \spin_j$, but allowing a non-symmetric $J_{ij}$. The dynamics still preserves spin-rotational symmetry but cannot be derived from a Hamiltonian. 
+
+
+In this Letter, we study a chain of Heisenberg spins with purely antisymmetric couplings, $J_{ij} = - J_{ji}$. Despite the absence of a Hamiltonian description for this maximally non-reciprocal dynamics, we find the system displays %undergoes 
+an analogue of thermalization and smooth fluctuating hydrodynamic behaviour of emergent conserved fields, namely the three components of the \textit{staggered} magnetization and a scalar which we call the pseudo-energy. These are distinct from quasiconserved quantities as discovered in a class of periodically driven systems \cite{McRoberts_PRR5}. We develop a self-consistent treatment which leads to diffusion for these slow fields and relaxational dynamics for the regular magnetization, which we corroborate by direct numerical simulation of the microscopic equations of motion. Finally, we numerically calculate the decorrelator for our system and show that it displays a ballistic spreading of chaos like its Hamiltonian counterpart thereby providing further evidence for thermalization.
+
+The decorrelator or Out-of-Time-Ordereded-Correlator (OTOC) has proven to be a useful tool in the study of chaos spreading in quantum non-integrable systems and also classical ones with elementary degrees of freedom, like spins, that do not have a symplectic Poisson bracket structure.   \cite{PhysRevB.105.214308,PhysRevX.8.031057,1503.01409}. The decorrelator of a classical one-dimensional system of Heisenberg spins described by a Hamiltonian with only nearest neighbour exchange (henceforth referred to as the Heisenberg model) was found to exhibit a ballistic spreading of chaos with a butterfly velocity even while the magnetization and energy densities displayed diffusion at high temperature, consistent with the expectation of thermalization in this system~\cite{das2018light,McRoberts_PRB105}.
+
+\paragraph{Model:} We study a system of classical spins ${\spin}_i$ of unit magnitude on the sites $i$ of a one-dimensional lattice of $L$ sites with periodic boundary conditions. The equation of motion of the spins is 
+\begin{align}
+\dot{\spin_i} &= \spin_i \times (\spin_{i+1} - \spin_{i-1} )
+\label{eqn:drvn_dynmk}
+\end{align}
+Although the dynamics is non-Hamiltonian, it  obeys a Liouville theorem \cite{Suppinf}, i.e., the flow in spin-space is divergence-free.
+Eqn.(~\ref{eqn:drvn_dynmk}) conserves neither the magnetization ${\magg}=\sum_i {\spin}_i$ nor the Heisenberg Hamiltonian.
+However, the dynamics conserves the staggered magnetization ${\stagg}=\sum_i (-1)^i {\spin}_i$ and the quantity 
+$%{\mathcal E} 
+\mathcal{E}= \sum_i (-1)^i {\spin}_i \cdot {\spin}_{i+1}$, which we refer to as the pseudo-energy. These are analogues of the magnetization and energy that are conserved in the Heisenberg model.
+We numerically calculate the two-point correlators $C_N(x,t) = \langle {\stagg}(x+x_0,t+t_0) \cdot {\stagg}(x_0,t_0)\rangle$ and $C_{{\mathcal E}}(x,t) = \langle {\mathcal E}(x+x_0,t+t_0){\mathcal E} (x_0,t_0)\rangle$ in the statistical steady state, with the samples drawn from an ensemble with equally weighted microstates. 
+The results are shown in Fig. (~\ref{fig:NN_EN_corrxt}) where the good data collapse shows that correlations of ${\stagg}$ and of ${\mathcal E}$ spread diffusively.
+ 
+\paragraph{Hydrodynamic description:}To arrive at the continuity equations for the two conserved quantities, we rewrite the spins at the even and odd lattice indices as linear combinations of magnetization and staggered magnetization: 
+$ \spin_{2i}  = \magg_i + \stagg_i ,  \spin_{2i+1} = \magg_i - \stagg_i$. 
+The pseudo-energy can be similarly rewritten as 
+${\mathcal{E}}_i = \frac{1}{2}\spin_{2i} \cdot (\spin_{2i-1} - \spin_{2i+1})
+     = -\frac{1}{2}(\magg_i+\stagg_i)\cdot (\magg_{i-1} -  \stagg_{i-1} - \magg_i + \stagg_i) $.
+The spin dynamics (~\ref{eqn:drvn_dynmk}) can be written in terms of $\magg_{i}$ and $\stagg_{i}$ and coarse-grained while retaining only the most relevant lower order gradient terms. In a na\"{\i}ve continuum limit, in which coarse-grained expressions for products of variables are replaced by the products of the individual coarse-grained quantities, we obtain the following hydrodynamic equations for $\magg$ and $\stagg$~\cite{Suppinf}.
+\begin{align}
+    \partial_t \magg(x,t) &=  \magg \times \partial_x \magg  - \stagg \times \partial_x \stagg
+    \label{eqn:M_contnus}
+\end{align}
+\begin{align}
+    \partial_t \stagg(x,t) &= \partial_x (\stagg \times \magg )
+    \label{eqn:N_contnus}
+\end{align}
+Further, the staggered energy in the continuum limit is
+${\mathcal{E}}(x,t)   =  -\frac{1}{2} (\magg + \stagg) \cdot \partial_x (\magg - \stagg) $, with the dynamical equation~\cite{Suppinf}
+ \begin{align}
+    \partial_t {\mathcal{E}} &= \partial_x \left( (\magg \times \stagg) \cdot \partial_x (\magg + \stagg) \right)
+    \label{eqn:EN_contnus}
+\end{align}
+Eqns. (~\ref{eqn:N_contnus}) and (~\ref{eqn:EN_contnus}) have the form of continuity equations, as expected, for the conserved quantities $\stagg$ and ${\mathcal{E}}$, with the currents $j_{\stagg} = \magg \times \stagg $ and $j_{{\mathcal{E}}} =  -(\magg \times \stagg) \cdot \partial_x (\magg + \stagg)$ respectively. 
+
+Equations (~\ref{eqn:M_contnus} - ~\ref{eqn:EN_contnus}) have been obtained for the hydrodynamic (i.e. low wavenumber) modes of $\magg$ and $\stagg$. The conservation law for $\stagg$ suggests that it is a slow variable evolving against the backdrop of the decaying non-conserved variable $\magg$. We expect that the effect of the large wavenumber (fast) modes on these hydrodynamic modes is to provide a noise for each, which in conjunction with the non-linearities in (~\ref{eqn:M_contnus}),(~\ref{eqn:N_contnus}) give rise to diffusion for the conserved mode $\stagg$ and relaxation for the non-conserved mode $\magg$.
+We thus write down the following effective hydrodynamic equations for $\magg$ and $\stagg$.
+
+\begin{align}
+    \begin{split}
+         \partial_t \magg &= -\magg/\tau + u_M (\magg \times \partial_x \magg) - u_N (\stagg \times \partial_x \stagg) + \boldsymbol{\xi} 
+         \end{split}
+         \label{eqn:Mhydro}
+         \end{align}
+and       
+\begin{align}
+    \begin{split}
+             \partial_t \stagg &= D\partial_x^2 \stagg - u_{MN} \partial_x (\magg \times \stagg) + \boldsymbol{\zeta},
+    \end{split}
+    \label{eqn:Nhydro}
+\end{align}
+where $\boldsymbol{\xi}$ and $\boldsymbol{\zeta}$ are a non-conserving and conserving noise consistent with $\magg$ and $\stagg$ being non-conserved and conserved respectively. Further
+\begin{align}
+    \begin{split}
+    \langle \xi^{\alpha}(x,t) \xi^{\beta}(x',t') \rangle &= A_M \delta^{\alpha \beta} \delta(x-x') \delta(t-t')
+    \end{split}
+    \label{eqn:Mnoise}
+\end{align}
+and
+\begin{align}
+    \begin{split}
+\langle \zeta^{\alpha}(x,t) \zeta^{\beta}(x',t') \rangle &= - A_N \delta^{\alpha \beta} \nabla^2 \delta(x-x') \delta(t-t').
+    \end{split}
+    \label{eqn:Nnoise}
+\end{align}
+
+In the above equations, in addition to the relaxation time $\tau$, diffusion constant $D$ and noise $\boldsymbol{\xi}$ and $\boldsymbol{\zeta}$, we assume there are effective non-linear couplings $u_M$, $u_N$ and $u_{MN}$. The detailed derivation of the above equations by integrating out the fast modes is an involved exercise, which we defer to future work. Here, we motivate the form of the above equations from the structure of Eqns.(~\ref{eqn:M_contnus},~\ref{eqn:N_contnus}) with the observation that the parameters $u_M$, $u_N$ and $u_{MN}$, $\tau$, $D$ along with the noise strengths $A_M$ and $A_N$ are not independent and satisfy relations among themselves. These relations allow us to argue for the existence of diffusion of $\stagg$ and relaxation of $\magg$, while calculating the diffusion constant $D$ and relaxation time $\tau$ self-consistently. 
+
+We proceed by adapting the formalism of~\cite{PhysRevB.11.4077} to our system. The Eqns.(~\ref{eqn:Mhydro},~\ref{eqn:Nhydro}) allow us to calculate the propagators for the fields $\magg$ and $\stagg$ perturbatively in the couplings $u_M$, $u_N$ and $u_{MN}$. The self-energy $\Sigma_M$ for the field $\magg$ is then set equal to $-1/\tau$ and the self-energy $\Sigma_N$ for $\stagg$ to $-Dq^2$ (where $q$ is the wavenumber) to obtain self-consistent equations for the relaxation time and the diffusion constant. Fig. (~\ref{fig:Oneloop_FeynG}) shows the diagrams that contribute to the self-energies upto one loop. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{FeynmanG_mainpaper1.pdf}
+    \caption{\small One-loop diagrams contributing to the self energy $\Sigma_M$ (top) and $\Sigma_N$ (bottom). $u_M$, $u_N$ and $u_{MN}$ are the coupling constants in Eqns.(~\ref{eqn:Mhydro},~\ref{eqn:Nhydro}). The momentum dependent vertex factors are also obtained from these equations. The gray shaded square is the correlator of the non-conserving noise(~\ref{eqn:Mnoise}), and the dark gray circle the correlator of the conserving noise(~\ref{eqn:Nnoise}). The two types of wavy lines are the propagators of the fields $\stagg$ and $\magg$.}
+    \label{fig:Oneloop_FeynG}
+\end{figure}
+
+\begin{figure*}[htp]
+\centering
+\subfigure[$C_{N}(x,t)$ ]
+  {\includegraphics[scale=0.28]{Cnnxt_vs_x_L512_qwdrvn_diffcollapse.pdf}}
+  \label{fig:Nxt_correlations}
+\quad \quad \quad 
+\subfigure[$C_{{\mathcal{E}}}(x,t)$]  
+    {\includegraphics[scale=0.28]{CENxt_vs_x_L512_qwdrvn_diffcollapse.pdf}}
+     \label{fig:CENxt_correlations}
+\caption{ \small Two-point correlation functions of: (a) the staggered magnetization, $C_{N}(x,t)$ and (b) the pseudo-energy , $C_{\mathcal{E}}(x,t)$, with $x \in \{1,L\}$ for $L=512$, sampled over 5000 initial configurations as functions of $x$ for different values of $t$. The left inset of both panels shows the scaling collapse to a form $C(x,t) = t^{-1/2}f(x/t^{1/2})$ consistent with diffusion while the right shows a plot of $C(0,t)$ versus $t$ with a fit to $t^{-1/2}$.}
+\label{fig:NN_EN_corrxt}
+\end{figure*}
+
+These yield the following equations~\cite{Suppinf}
+\begin{align}
+    \begin{split}
+\frac{1}{\tau} &= u_M^2A_M\tau^2\Lambda^3 + u_N u_{MN}A_N\Lambda/D^2 \\
+D & = u_{MN}^2A_M\sqrt{\frac{\tau^3}{D}} + u_Nu_{MN}A_N \sqrt{\frac{\tau}{D^3}},
+    \end{split}
+    \label{eqn:selfcons}
+\end{align}
+where we have absorbed the numerical prefactors arising from the integrals in the calculation of the diagrams in Fig. (~\ref{fig:Oneloop_FeynG}) into the definitions of the effective parameters $u_M$, $u_N$, $u_{MN}$, $A_M$ and $A_N$. This allows us to obtain the terms on the right hand side of Eqn.(~\ref{eqn:selfcons}) simply from power counting of the diagrams in terms of the ultraviolet cutoff $\Lambda$ ~\cite{Suppinf}. Note that that the effective parameters in Eqns.(~\ref{eqn:Mhydro}) and(~\ref{eqn:Nhydro}) are, in principle, dependent on the values of $\stagg$ and ${\mathcal{E}}$ since these are the quantities conserved by the dynamics. 
+
+To numerically demonstrate the presence of diffusion, we perform a calculation analogous to that performed for the magnetization and energy of the classical Heisenberg model in~\cite{das2018light}. We calculate the two point correlator $C_{N}(x,t)$ of $\stagg$ by sampling over all possible initial states with equal weight. This is an unbiased calculation over all microstates and is simpler to perform than one with fixed values of the conserved quantities. For the Heisenberg model, in the thermodynamic limit, it corresponds to a zero value of both the energy and the magnetization, from the equivalence of ensembles. For our model, it presumably corresponds to zero values of both $\stagg$ and ${\mathcal{E}}$ in the thermodynamic limit. 
+
+\paragraph{Numerical results:} Each individual configuration of our system is  evolved according to  Eqn.(~\ref{eqn:drvn_dynmk}), with $\Delta t = 0.001 - 0.002 $ using an RK4 integrator. The system size for correlator calculation is $L= 512$, with  $5000$ initial conditions sampled from an ensemble in which all microstates are equally weighted. The correlator $C(x,t)$ is calculated by sliding over the reference point $x_0,t_0$, averaging over 500 consecutive snapshots for each fixed time t, for each initial state.
+Under the ambit of hydrodynamic theory, the two-point correlator of conserved quantities shows a scaling function of the form $C(x,t) \sim t^{-\alpha} f(t^{-\alpha}x)$ , with $\alpha$ as the scaling exponent and $f$ a universal function. The numerical results for $C_{N}(x,t)$ and $C_{\mathcal{E}}(x,t)$ in Fig. (~\ref{fig:NN_EN_corrxt}) show that the two-point correlators for both the conserved quantities decay in time in a manner consistent with diffusion ($\alpha = 1/2$). The insets show a scaling collapse of both correlators to the diffusive form $t^{-1/2} f(t^{-1/2}x)$, where the exact function $f$ is different for the two cases. 
+
+The magnetization starting from different initial states is found to rapidly decay to zero numerically as expected from relaxational dynamics for $\magg$~\cite{Suppinf}. In particular, for initial conditions in which the magnetization has a modulation at a wavevector $k$ about a uniformly magnetized state, the relaxation time is finite in the limit $k \rightarrow 0$ as expected due to the finite value of $\tau$ we have assumed in our theory. 
+\begin{figure*}[htp]
+  \centering
+  \subfigure{\includegraphics[scale=0.4]{Dxt_L2048_qwdrvn_emin3_dt_1emin3.png}}
+  \label{fig:puredrvn}
+  \quad \quad
+  \subfigure{\includegraphics[scale=0.41]{logDxt_annottd_qwdrvn_40tinit.pdf}}
+  \caption{\small (Left) Colormap of the decorrelator $D(x,t)$ calculated by averaging over pairs of initial conditions that differ only in the value of the spin ${\bf S}$ at the site $x=0$. It can be seen that this initial disturbance spreads ballistically from which the butterfly velocity $v_B=1.35$ can be obtained. (Right) The decorrelator given by the expression in Eqn.(~\ref{eqn:front}) plotted as a function of $x/t$ for different values of $t$. As expected, it can be seen that there is a collapse of the curves in the vicinity of the front from which the Lyapunov exponent $\approx 0.49$ can be extracted. The inset shows $D(x,t)$ as a function of $x$ for different values of $t$. The existence of a front can be seen from the rapid decrease in the value of $D(x,t)$ as a function of $t$ (inset).}
+  \label{fig:Dxt_logDxt_drvn}
+\end{figure*}
+
+\paragraph{Decorrelator and chaos propagation:}
+We now turn to a different characterization of the dynamics of our system, namely the spreading of chaos. Chaotic dynamics is considered to be an important indicator of the presence of thermalization in Hamiltonian systems. Chaos spreading in the classical Heisenberg chain has been quantified through a numerical calculation of the decorrelator, which shows a ballistic spreading of chaos with a butterfly velocity~\cite{das2018light}. Further, a calculation of the decorrelator allows one to obtain a Lyapunov exponent even for spin systems, whose elementary degrees of freedom do not have a symplectic Poisson bracket structure. We perform a similar calculation of the decorrelator for our system. The decorrelator is defined as
+\begin{align}
+    D( x_i, t) = 1- \langle \spin_i^{a}( t)\cdot \spin_i^{b}( t) \rangle,
+    \label{eqn:Decorr}
+\end{align} 
+where $a$ and $b$ are two different initial conditions which differ only at a single site of the lattice ($i=0$) as 
+\begin{align*}
+\spin^{b}_0(0) = \spin^{a}_0(0) + \delta \spin_0
+\end{align*} 
+where
+\begin{align}
+\begin{split}
+\delta \spin_0 &= \varepsilon[\hat{\mathbf{n}} \times \spin^a_0(0)] \\
+\hat{\mathbf{n}} &= [\hat{\mathbf{z}} \times \spin^a_0(0)]/|\hat{\mathbf{z}} \times \spin^a_0(0)|
+\end{split}
+\label{eqn:Epsilonchange}
+\end{align}
+$\hat{\mathbf{z}}$ is the unit-vector along an arbitrarily define z-axis and $\varepsilon$ is the strenth of the perturbation (i.e. a measure of how different the two initial conditions are). As for the calculation of the two point correlators, all possible initial conditions are equally weighted while performing the average $\langle \dots \rangle$ in Eqn.(~\ref{eqn:Decorr}). 
+
+We used $L=2048$, $\Delta t = 0.001$ in the numerical evolution of (~\ref{eqn:drvn_dynmk}), averaged over 10000 uniformly drawn initial configurations, to evaluate the decorrelator. The spin arrays were stored with quadruple numerical precision.  A colormap of the decorrelator obtained is shown in Fig.(~\ref{fig:Dxt_logDxt_drvn}). It can be clearly seen that the disturbance of strength $\varepsilon$ introduced at site $i=0$ spreads ballistically with a clearly defined butterfly velocity $v_B$. We obtain $v_B = 1.35(\pm 0.02) $ which is different from the value obtained for the classical Heisenberg model~\cite{das2018light} illustrating the difference in the microscopic dynamics of the two models.     
+
+In the vicinity of the ballistically propagating front, the form of the decorrelator can be approximated as~\cite{das2018light} as
+\begin{align}
+\log%\left(\right)
+\dfrac{D(x,t)}{\varepsilon^2 } &= 2 \kappa t [1 - (x/v_B t)^2],
+\label{eqn:front}
+\end{align}
+where $\kappa$ is the Lyapunov exponent of the system. A fit to this form in the vicinity of the front is also shown in Fig. (~\ref{fig:Dxt_logDxt_drvn}) from which one can obtain a Lyapunov exponent as well equal to $0.49(\pm 0.02)$. This value falls within the error range of the value calculated for the Heisenberg model~\cite{das2018light,Suppinf}.
+
+
+\paragraph{Discussion:} To summarize, we have studied the dynamics of a classical spin chain with non-reciprocal couplings, which cannot be derived from a Hamiltonian employing standard Poisson bracket relations. We find that the dynamics conserves the staggered magnetization and a pseudo-energy which are analogous to the conserved magnetization and energy of the classical Heisenberg model. We have developed a hydrodynamic description of the model which self-consistently produces diffusion for the staggered magnetization and a relaxation of the magnetization for which we have also provided numerical evidence by simulating the microscopic dynamics. We have also shown that the model we study displays a ballistic spreading of chaos 
+surprisingly similar to that seen in the Heisenberg model and we have numerically obtained the butterfly velocity and Lyapunov exponent. 
+
+Our primary conclusion is that there is clearly an analogue of thermalization in the model we have studied despite the absence of a Hamiltonian. The emergence %observation 
+of diffusion in conserved quantities from an underlying precessional dynamics, and the ballistic spreading of chaos in strict analogy with the Heisenberg model --- for which these phenomena are presented as evidence of thermalization--- 
+form the basis of our conclusion. 
+Our findings open up the possibility of expanding the notion of thermalization 
+to encompass the  behaviours observed in non-reciprocal systems such as the one we study. An investigation of the nature of the long-time steady state and a statistical description of it in terms of suitable ensembles is a fertile direction for future work.
+
+\textbf{ACKNOWLEDGEMENTS} SR acknowledges the SERB, India, for support in the form of a J C Bose National Fellowship. SM acknowledges support from the DST, Govt. of India. NB acknowledges support from UGC India.
+\bibliography{references}
+\end{document}
