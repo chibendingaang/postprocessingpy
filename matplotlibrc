@@ -1,0 +1,48 @@
+axes.formatter.limits : -5, 5
+axes.linewidth        : 2
+
+errorbar.capsize      : 2
+
+figure.dpi            : 300
+figure.figsize        : 7, 7
+font.family           : serif
+font.serif            : Latin Modern Roman
+font.sans-serif       : Computer Modern
+font.size             : 20
+font.weight           : bold
+image.cmap            : viridis
+
+axes.titlesize : 24
+axes.labelsize : 20
+
+lines.linewidth : 3 
+legend.handletextpad  : 0.2
+legend.fontsize       : 15
+legend.frameon        : True
+legend.handlelength   : 0.8
+legend.labelspacing   : 0.2
+legend.markerscale    : 1.0
+lines.markersize      : 5
+
+#mpl_toolkits.legacy_colorbar : False
+savefig.bbox          : tight
+#savefig.dpi           : 400
+savefig.format        : pdf
+savefig.transparent   : True
+text.usetex           : True
+text.latex.preamble   : \usepackage{bm}
+
+xtick.direction       : out
+xtick.minor.visible   : False
+ytick.direction       : out
+ytick.minor.visible   : False
+xtick.top             : False
+ytick.right           : False
+xtick.major.size      : 5
+xtick.major.width     : 3
+ytick.major.size      : 5
+ytick.major.width     : 3
+xtick.minor.size      : 3
+xtick.minor.width     : 1
+ytick.minor.size      : 3
+ytick.minor.width     : 1
