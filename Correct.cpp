@@ -1,6 +1,3 @@
-Here is the complete C++ code:
-
-```cpp
 #include <iostream>
 #include <fstream>
 #include <vector>
