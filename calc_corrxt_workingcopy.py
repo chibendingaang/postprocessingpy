@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-First version on Wed Oct 13 17:46:47 2021
 @author: nisarg
 """
 import sys
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 np.set_printoptions(threshold=2561)
 
 L = int(sys.argv[1])
@@ -23,8 +29,10 @@ choice = int(sys.argv[8])
 
 interval = 1
 t_smoothness = int(sys.argv[9]) #typically? 100
-if dtsymb ==2: fine_res = 1*t_smoothness
-if dtsymb ==1: fine_res = 2*t_smoothness
+if dtsymb ==2: 
+    fine_res = 1*t_smoothness
+if dtsymb ==1: 
+     fine_res = 2*t_smoothness
 
 dtstr = f'{dtsymb}emin3'    
 epstr = {3: 'eps_min3', 4: 'eps_min4', 6: 'eps_min6', 8: 'eps_min8' }
@@ -34,9 +42,12 @@ elif Lambda == 0 and Mu == 1: paramstm = 'drvn'
 else: paramstm = 'a2b0'
 
 alpha = (Lambda - Mu)/(Lambda + Mu)
-alphastr = str(int(alpha/1)) + 'pt' + str(int(100*(alpha%1))) 
+alphadeci = lambda alpha: ('0' + str(int(100*(alpha%1)))) if (int(100*(alpha%1)) < 10) else (str(int(100*(alpha%1))))
+alpha_deci = alphadeci(alpha)
+alphastr_ = lambda alpha: str(int(alpha/1)) + 'pt' + alpha_deci
+alphastr = alphastr_(alpha)
+print('alphastr = ', alphastr) 
 
-epstr = dict()
 epstr = {3:'emin3', 4:'emin4', 6:'emin6', 8:'emin8', 33:'min3', 44:'min4'}
 
 
@@ -51,14 +62,13 @@ if choice == 0:
        path =  f'./{param}/L{L}/2emin3'
    else: 
        path =  f'./{param}/L{L}/alpha_{alphastr}/2emin3'
-   #path =  f'./{param}/L{L}/2emin3' #path0 #usually xpdrvn 
+    
 if choice == 1:
     param = 'qw' + paramstm 
     if paramstm!= 'a2b0': path =   f'./{param}/L{L}/2emin3'
     else:
         #no quadruple precision numerics for generalized case
         param = 'qwa2b0'; path =  f'./{param}/2emin3/alpha_{alphastr}'
-
     # path = f'./L{L}/{epstr[epss]}/{param}' #path1  
     # the largest file data is currently here: 17-04-2023
 
@@ -70,9 +80,9 @@ if choice ==2:
        param = paramstm
        path =  f'./{param}/L{L}/2emin3'
 
-
 #for all relevant purposes:
 #epss = 3; choice = 0/1; fine_res = t_smoothness = 1
+
 start  = time.perf_counter()
 
 """settling the steps count discrepancy for good:
@@ -80,11 +90,10 @@ Logic for 2*steps + 1:
 dt = 0.001 (or 0.002, 0.005)
 arrays are stored at 100 step_intervals -> (0.1)*dtsymb in time unit
 so steps = (len(array)/(3*L) - 1)*0.1*dtsymb
+
+#Cxtavg = np.zeros((2*steps+1,L)) #2*steps+1
 """ 
 
-#choice == 0 -> current location of data;
-#choice == 1 -> some other location
-#Cxtavg = np.zeros((2*steps+1,L)) #2*steps+1
 
 def calc_Cxt(Cxt_, steps, spin):
     #Cxt_/Cnnxt_ is input zero-value array with the shape (steps/fine_res, L)
@@ -92,10 +101,10 @@ def calc_Cxt(Cxt_, steps, spin):
         # ti: {0 -> steps//fine_res + 1}
         print('time: ', t)
         for x in range(L):
-            Cxt_[ti,x] = np.sum(np.sum((spin*np.roll(np.roll(spin,-x,axis=1),-ti,axis=0))[:-ti],axis=2))/(steps//fine_res+1 - ti)  	
-            #multiplying an array Sxt[t=ti] with a scalar Sxt[t=0,L=0]
+            Cxt_[ti,x] = np.sum(np.sum((spin[:-ti, :-x, :]*np.roll(np.roll(spin,-x,axis=1)[:,:-x,:],-ti,axis=0)[:-ti]),axis=2))/((L-x)*(steps//fine_res+1 - ti))  	
     return Cxt_
-
+ 
+"""
 def calc_autoCxt(autoCxt_, steps, spin):
     for ti,t in enumerate(range(0,steps,fine_res)):
         print('time: ', t)
@@ -110,6 +119,7 @@ def calc_CExt(CExt_, steps, elocal):
         for x in range(L):
             CExt_[ti,x] = np.sum((elocal*np.roll(np.roll(elocal,-x,axis=1),-ti,axis=0))[:-ti])/(steps//fine_res+1 - ti)
     return CExt_
+"""
 
 def obtaincorrxt(file_j, path): 
     """
@@ -183,7 +193,7 @@ def obtaincorrxt(file_j, path):
     '''
     for ti in range(mconsv.shape[0]):
         for x in range(mconsv.shape[1]):
-            mconsv[ti,x] = 0.5*(Sp_a[ti,x])/(alpha)**x
+            mconsv[ti,x] = Sp_a[ti,x]/(alpha)**x
             #mdecay[ti,x] = 0.5*(Sp_a[ti,2*x] - Sp_a[ti,(2*x+1)%L]/alpha)/(alpha)**x
     
     def mconsv_mdecay(param):
@@ -208,19 +218,8 @@ def obtaincorrxt(file_j, path):
     print('mconsv.shape: ', mconsv.shape)
     print('Cxt =  \n', Cxt)
 
-    """ suppressing for indexerror avoidance
-    plt.figure()
-    for ti in range(1, mconsv.shape[0], mconsv.shape[0]//4):
-        #print(ti); print(mconsv.shape[0])
-        # this still seems unncecessary >> 22-06-2024
-        plt.plot(np.arange(0, mconsv.shape[0], mconsv.shape[0]//4), np.average(np.sqrt(np.sum((mconsv*mconsv),axis=2)))[::100])
-    #plt.savefig('./plots/Mconsv_distribution_t.png')
-    """
-
-    print('shapes of the arrays Cxt/Cnnxt, energ_1/energ_eta1 respectively: ')
-    print(Cxt.shape) #, energ_1.shape)
+    print('shapes of the arrays Cxt/Cnnxt, energ_1/energ_eta1 respectively: \n', Cxt.shape) #, energ_1.shape)
     return Cxt[1:]/L # divide_by_L should be taken care of by calc_Cxt function ideally #, Cnnxt[1:]/L #,energ_1, energ_eta1
-     
 
 if L==1024: Cxtpath = f'Cxt_series_storage/L{L}/{epstr[epss]}'
 else: Cxtpath = 'Cxt_series_storage/L{}'.format(L)
@@ -241,7 +240,9 @@ for conf in range(begin, end):
     #easier condition: if Cxt (is not None): save the qwhsbg files; if Cnnxt(is not None): save the qwdrvn files;
     #f = open(f'./{Cxtpath}/Cxt_t_{dtstr}_{epstr[epss]}_{param}_{conf}to{conf+1}config.npy','wb'); np.save(f, Cxt); f.close()
     if param =='xpa2b0' or param == 'qwa2b0':
-        f = open(f'./{Cxtpath}/alpha_ne_pm1/Cxt_t_{dtstr}_jump{fine_res}_{epstr[epss]}_{param}_{alphastr}_{conf}to{conf+1}config.npy','wb'); np.save(f, Cxt); f.close()
+        f = open(f'./{Cxtpath}/alpha_ne_pm1/Cxt_t_{dtstr}_jump{fine_res}_{epstr[epss]}_{param}_{alphastr}_{conf}to{conf+1}config.npy','wb'); 
+        np.save(f, Cxt); 
+        f.close()
     
     #ideally, should've been named CExt, and CENxt for storage purposes, but we're continuing it since many files have been 
     #already saved with this name
