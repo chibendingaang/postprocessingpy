@@ -42,6 +42,7 @@ elif Lambda == 0 and Mu == 1: paramstm = 'drvn'
 else: paramstm = 'a2b0'
 
 alpha = (Lambda - Mu)/(Lambda + Mu)
+# single digit suffix vs double digit suffix: 01,02,...,09 v/s 11, 12,..., 99
 alphadeci = lambda alpha: ('0' + str(int(100*(alpha%1)))) if (int(100*(alpha%1)) < 10) else (str(int(100*(alpha%1))))
 alpha_deci = alphadeci(alpha)
 alphastr_ = lambda alpha: str(int(alpha/1)) + 'pt' + alpha_deci
