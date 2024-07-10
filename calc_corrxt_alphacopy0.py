@@ -97,14 +97,18 @@ so steps = (len(array)/(3*L) - 1)*0.1*dtsymb
 
 def calc_Cxt(Cxt_, steps, spin):
     #Cxt_/Cnnxt_ is input zero-value array with the shape (steps/fine_res, L)
+    # here, spin is the mconsv qty for the alpha-dynamics
     spin = spin[0:steps:fine_res]
     print('mconsv, Cxt, mconsv_sliced pre- and post-slice shapes: \n', spin.shape, Cxt_.shape, spin[10:,2:,:].shape, spin[:(steps//fine_res +1 -10),:(L-2),:].shape) 
+    
     for ti,t in enumerate(range(0,steps,fine_res)):
         # ti: {0 -> steps//fine_res + 1}
         print('time: ', t)
         for x in range(L):
-            Cxt_[ti,x] = np.sum(np.sum((spin[ti:, x:, :]*np.roll(np.roll(spin,-x,axis=1),-ti,axis=0)[:(steps//fine_res +1 -ti), :(L-x),:]),axis=2))/((L-x)*(steps//fine_res +1 - ti))  	
+            Cxt_[ti,x] = np.sum(np.sum((spin*np.roll(np.roll(spin,-x,axis=1),-ti,axis=0))[:(spin.shape[0] -ti), :L-x, :],axis=2))/((L-x)*(spin.shape[0] - ti))  	
     return Cxt_
+ 
+ 
  
 """
 def calc_autoCxt(autoCxt_, steps, spin):
@@ -145,7 +149,7 @@ def obtaincorrxt(file_j, path):
 
     Sp_a = np.reshape(Sp_aj, (steps,L,3)) #[0:steps:fine_res]; we want the original 961 steps, not 26 or fewer
     print('Sp_a.shape: ' , Sp_a.shape)
-    stepcount = min(steps, 2001)
+    stepcount = min(steps, 1281)
     Sp_a = Sp_a[:stepcount] 
 
     print('steps , step-jump factor = ', stepcount, fine_res)
@@ -261,4 +265,3 @@ print('processing time = ', time.perf_counter() - start)
 
 #Cxtavg = Cxtavg/nconf
 #print('shape of Cxtavg: ', Cxtavg.shape)
-
