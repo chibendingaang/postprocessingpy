@@ -1,7 +1,7 @@
 import numpy as np
 
 np.random.seed(98)
-L = 8, steps = 48
+L = 8; steps = 48
 arr = np.random.uniform(-1,1,(steps+1, L,3))
 a,b,c = arr.shape
 
