@@ -37,7 +37,7 @@ steps = 1280
 
 if dtsymb == 1: dtstr = '1emin3'; steps = min(steps,1024)
 if dtsymb == 2: dtstr = '2emin3'; steps = min(512,steps) #400
-if dtsymb == 5: dtstr = '5emin3' 
+if dtsymb == 5: dtstr = '5emin3' ; steps = min(800, steps)
 
 alpha = (Lambda - Mu)/(Lambda + Mu)
 alphadeci = lambda alpha: ('0' + str(int(100*(alpha%1)))) if (int(100*(alpha%1)) < 10) else (str(int(100*(alpha%1))))
@@ -83,15 +83,15 @@ def obtainspinsnew(steps):
         it will lead to incorrect t-axis if another dt_ value is used
         try 5*T+1 if dt_ == 0.002 and every 100 step is stored in the array.
         """ 	
-    Dnewxt = np.concatenate((Dxt[:,L//2:], Dxt[:,0:L//2]), axis = 1) 
-    print(Dnewxt.shape)
-    return Dnewxt 
+    #Dnewxt = np.concatenate((Dxt[:,L//2:], Dxt[:,0:L//2]), axis = 1) 
+    print("Dxt.shape: ", Dxt.shape)
+    return Dxt 
 
 def savedecorr():
     r = int(1./dt); 
     #D_th = math.pow(10,-2); D_th2 = math.pow(10,-4)
     Dnewxt = obtainspinsnew(steps)
-    print(Dnewxt.shape, Dnewxt[::500], Dnewxt.shape)
+    #print(Dnewxt.shape, Dnewxt[::500], Dnewxt.shape)
     
     if L==1024: f = open('./Dxt_storage/L1024/Dxt_{}_{}_dt_{}_sample_{}to{}.npy'.format(L,param, dtstr,base_ + begin,base_ + end), 'wb') #Mu, epstr
     else: f = open('./Dxt_storage/alpha_ne_pm1/Dxt_{}_{}_{}_dt_{}_sample_{}to{}.npy'.format(L,param, alphastr, dtstr,base_ + begin,base_ + end), 'wb') #Mu, epstr
