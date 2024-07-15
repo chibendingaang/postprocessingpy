@@ -56,9 +56,11 @@ steps = int(1280*L/1024)//dtsymb
 #standard number of steps that have been input for the simulation runs
 #either 1280 or 1600 as prefactor
 
-if L == 512: steps = 512 #min(512, steps)
-Dxtavg = np.zeros((inv_dtfact*steps+1,L)) #2*steps+1
-print('Dxtavg.shape: ', Dxtavg.shape)
+if L == 512: 
+    if dtsymb ==2: steps = 512 #min(512, steps)
+    if dtsymb == 5: steps = 800
+Dxtavg_ = np.zeros((inv_dtfact*steps+1,L)) #2*steps+1
+print('Dxtavg_.shape: ', Dxtavg_.shape)
 print('steps : ', steps)
 
 for k, fk  in enumerate(Dxt_files):
@@ -71,17 +73,23 @@ for k, fk  in enumerate(Dxt_files):
         if param == 'qwdrvn': Dxtk = np.load(f'./{path}/101M_2emin3/{fk}', allow_pickle=True);
         elif param == 'qwhsbg': Dxtk = np.load(f'./{path}/81M_2emin3/{fk}', allow_pickle=True);
         else: Dxtk = np.load(f'./{path}/{fk}', allow_pickle=True)
-    Dxtavg += Dxtk #[:inv_dtfact*steps+1]
+    if dtsymb==5:
+        Dxtk = np.load(f'./{path}/{fk}', allow_pickle=True)
+        
+    Dxtavg_ += Dxtk #[:inv_dtfact*steps+1]
     # why 2*steps + 1: dtsymb = 2*10**(-3); 
     # it is stored every 100 steps in dynamics --> 0.2; 5 time steps per unit time retrieved
 
-Dxtavg = Dxtavg/len(Dxt_files)
+Dxtavg_ = Dxtavg_/len(Dxt_files)
+if dtsymb != 5 and param != 'xpa2b0': Dxtavg = np.concatenate((Dxtavg_[:, L//2:], Dxtavg_[:,0:L//2]), axis=1) 
+else: Dxtavg = Dxtavg_
+
 print(Dxtavg[::100,:])
 print(Dxtavg.shape)
 #D_th = 100*epsilon**2		#not needed 
 
 t_,x_ = Dxtavg.shape
-T = 0.2*np.arange(0,t_)
+T = np.arange(0,t_) #why the factor of 0.2?
 X = -0.5*x_ +  np.arange(0,x_)
 #Dnewxt = obtainspins(steps*int(1./dt))
 #vel_inst = np.empty(steps*int(1./dt)) 		#not needed
@@ -94,6 +102,7 @@ fig, ax = plt.subplots(figsize= (9,7)); #plt.figure()
 img = ax.pcolormesh(X,T, Dxtavg[:-1,:-1], cmap = 'seismic',vmin =  0, vmax = 1.0);
 ax.set_xlabel(r'$\mathbf{x}$')
 ax.set_ylabel(r'$\mathbf{t}$')
+ax.set_ylim(0, 400)
 #ax.set_title(r'$ \lambda = $ {}, $\mu = $ {}'.format(Lambda,Mu),fontsize=16) #$D(x,t)$ heat map; $t$ v/s $x$;
 #xticks = ticker.MaxNLocator(7)
 #xticks = np.array([-960, -640, -320, 0, 320, 640, 960])
