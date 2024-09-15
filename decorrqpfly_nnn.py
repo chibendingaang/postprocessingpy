@@ -89,7 +89,7 @@ print('alphastr = ', alphastr)
 if Lambda == 1 and Mu == 0:
 	param = 'xphsbg_NNN' #'singleprec_xphsbg'
 elif Lambda == 0 and Mu == 1:
-	param = 'xpdrvn_NNN' #'singleprec_drvn'
+	param = 'qpdrvn_NNN' #'singleprec_drvn'
 elif Lambda ==1 and Mu==1:
     param = 'qwa2b0'; #base_ = base_ + 50000
 else:
@@ -117,12 +117,12 @@ def obtainspinsnew():
     steps = getstepcount(filepath)   
     print('steps = ', steps)
     r = int(1./dt)
-    Dxt = np.ones((steps, L), dtype=np.longdouble)
+    Dxt = np.ones((steps, L), dtype=np.float128) #longdouble)
     #inv_dtfact*steps+1 is redundant after getstepcount() is called
 
     for j in filenum:
-        Sp_aj = np.loadtxt(f'{filepath}/spin_a_{str(j)}.dat')
-        Sp_bj = np.loadtxt(f'{filepath}/spin_b_{str(j)}.dat')
+        Sp_aj = np.loadtxt(f'{filepath}/spin_a_{str(j)}.dat', dtype=np.float128)
+        Sp_bj = np.loadtxt(f'{filepath}/spin_b_{str(j)}.dat', dtype=np.float128)
         Sp_a = np.reshape(Sp_aj, (steps,L,3)); 
         #inv_dtfact*steps+1 is redundant after getstepcount() is called
         Sp_b = np.reshape(Sp_bj, (steps,L,3))           

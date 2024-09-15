@@ -48,10 +48,10 @@ epstr = {3:'emin3', 4:'emin4', 6:'emin6', 8:'emin8', 33:'min3', 44:'min4'}
 
 def getpathnparam():
     if Lambda == 1 and Mu == 0: 
-        param = 'xphsbg_NNN'
+        param = 'qphsbg_NNN'
         path = f'Dxt_storage'
     elif Lambda == 0 and Mu == 1: 
-        param = 'xpdrvn_NNN'
+        param = 'qpdrvn_NNN'
         path = f'Dxt_storage'
     elif Lambda == 1 and Mu == 1: 
         param = 'qwa2b0'
@@ -74,7 +74,7 @@ else:
 
 
 def getstepcount():
-    Sp_aj = np.loadtxt(f'{filepath}/spin_a_{str(16001)}.dat') #pick relevant filenum #4002 for L=130
+    Sp_aj = np.loadtxt(f'{filepath}/spin_a_{str(1)}.dat', dtype=np.float128) #pick relevant filenum #4002 for L=130
     steps = int(Sp_aj.shape[0]/(3*L))
     print('steps: ', steps)
     return steps
@@ -93,7 +93,7 @@ print(Dxt_files[::10])
 configs = Dxt_files.shape[0]
 
 #steps = 801
-Dxtavg_ = np.zeros((steps,L)) 
+Dxtavg_ = np.zeros((steps,L), dtype=np.float128) 
 print('Dxtavg_.shape: ', Dxtavg_.shape)
 print('steps : ', steps)
 
@@ -145,10 +145,10 @@ def plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs):
     fig, ax = plt.subplots(figsize=(9, 7))  # plt.figure()
     # fig.colorbar(img, orientation='horizontal')
     
-    img = ax.pcolormesh(X, T, Dxtavg[:-1, :-1], cmap='seismic', vmin=0, vmax=1.0)
+    img = ax.pcolormesh(X, dtsymb*T, Dxtavg[:-1, :-1], cmap='seismic', vmin=0, vmax=1.0)
     ax.set_xlabel(r'$\mathbf{x}$')
     ax.set_ylabel(r'$\mathbf{t}$')
-    ax.set_ylim(0, steps)
+    ax.set_ylim(0, dtsymb*steps*8//9)
     # ax.set_title(r'$ \lambda = $ {}, $\mu = $ {}'.format(Lambda, Mu), fontsize=16)  # $D(x,t)$ heat map; $t$ v/s $x$;
     # xticks = ticker.MaxNLocator(7)
     # xticks = np.array([-960, -640, -320, 0, 320, 640, 960])

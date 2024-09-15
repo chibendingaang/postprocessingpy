@@ -26,8 +26,6 @@ print('J1, J2: ', J1, J2)
 
 threshfactor = 100
 interval = 1 #interval is same as fine_res
-param = 'xpa2b0'; #'xpdrvn'; 'xphsbg'
-
 inv_dtfact = int(1/(0.1*dtsymb))
 dtstr = f'{dtsymb}emin3'
 epsilon = 10**(-1.0*epss) #0.00001
@@ -48,18 +46,18 @@ epstr = {3:'emin3', 4:'emin4', 6:'emin6', 8:'emin8', 33:'min3', 44:'min4'}
 
 def getpathnparam():
     if Lambda == 1 and Mu == 0: 
-        param = 'xphsbg_NNN'
-        path = f'Dxt_storage'
+        param = 'qphsbg_NNN'
+        path = f'./{param}/L{L}/{dtstr}/{J1J2comb}'
     elif Lambda == 0 and Mu == 1: 
-        param = 'xpdrvn_NNN'
-        path = f'Dxt_storage'
-    elif Lambda == 1 and Mu == 1: 
-        param = 'qwa2b0'
-        path = f'Dxt_storage/{param}' 
+        param = 'qpdrvn_NNN'
+        path = f'./{param}/L{L}/{dtstr}/{J1J2comb}'
+    #elif Lambda == 1 and Mu == 1: 
+    #    param = 'qwa2b0'
+    #    path = f'Dxt_storage/{param}' 
         #{epstr[epss]}_{param}'
     else:
         param = 'xpa2b0'
-        path = f'Dxt_storage/alpha_ne_pm1' #{epstr[epss]}_{param}'
+        path = f'./Dxt_storage/alpha_ne_pm1' #{epstr[epss]}_{param}'
     return param, path
 
 param, path = getpathnparam()
@@ -72,46 +70,32 @@ else:
     if L==1024: filepath = f'./L{L}/eps_min4/{param}'
     else: filepath = f'./{param}/L{L}/{dtstr}/{J1J2comb}'
 
+filepath = path
 
 def getstepcount():
-    Sp_aj = np.loadtxt(f'{filepath}/spin_a_{str(16001)}.dat') #pick relevant filenum #4002 for L=130
-    steps = int(Sp_aj.shape[0]/(3*L))
+    Sp_aj = np.loadtxt(f'{filepath}/Dxt_{str(11003)}.dat', dtype=np.float128) #pick relevant filenum #4002 for L=130
+    steps = int(Sp_aj.shape[0]/(L))
     print('steps: ', steps)
     return steps
 
 steps = getstepcount()
 
-#files where Dxt_ arrays are stored at
-filerepo = f'./{path}/{param}_dxt_{L}_{dtstr}_{J1J2comb}_out.txt' #{J1J2comb}_0pt80
-#filerepo = f'./{path}/{param}_dxt_{dtstr}_{alphastr}_out.txt'
-print('filerepo name, ', filerepo)
+with open(f'{filepath}/outdxt.txt', 'r') as Dxt_repo:
+    Dxt_files = np.array([dxtarr for dxtarr in Dxt_repo.read().splitlines()])[begin:end]
+    configs = Dxt_files.shape[0]
 
-f = open(filerepo)
-Dxt_files = np.array([dxtarr for dxtarr in f.read().splitlines()])[begin:end]
-f.close()
-print(Dxt_files[::10])
-configs = Dxt_files.shape[0]
-
-#steps = 801
-Dxtavg_ = np.zeros((steps,L)) 
+print(Dxt_files)
+    
+#steps = 801i
+Dxtavg_ = np.zeros((steps,L), dtype=np.float128) 
 print('Dxtavg_.shape: ', Dxtavg_.shape)
 print('steps : ', steps)
 
+#for Dxtk in Dxt_files:
+        
 def getDxtavg(Dxt_files, Dxtavg_):
     for k, fk  in enumerate(Dxt_files):
-        if dtsymb==1: 
-            if param =='qwhsbg': Dxtk = np.load(f'./{path}/201M_1emin3/{fk}', allow_pickle=True);
-            elif param =='qwdrvn': 
-                if k<1296: Dxtk = np.load(f'./{path}/201M_1emin3/{fk}', allow_pickle=True);
-                else: Dxtk = np.load(f'./{path}/161M_1emin3/{fk}', allow_pickle=True);
-            Dxtk = np.load(f'./{path}/{fk}', allow_pickle=True)
-        if dtsymb==2:
-            if param == 'qwdrvn': Dxtk = np.load(f'./{path}/101M_2emin3/{fk}', allow_pickle=True);
-            elif param == 'qwhsbg': Dxtk = np.load(f'./{path}/81M_2emin3/{fk}', allow_pickle=True);
-            Dxtk = np.load(f'./{path}/{fk}', allow_pickle=True)
-        if dtsymb==5:
-            Dxtk = np.load(f'./{path}/{fk}', allow_pickle=True)
-        
+        Dxtk = np.loadtxt(f'{filepath}/{fk}', dtype=np.float128).reshape(steps,L) #when np.load was used:, allow_pickle=True)
         Dxtavg_ += Dxtk #[:inv_dtfact*steps+1]
     return Dxtavg_/len(Dxt_files)
     # why 2*steps + 1: dtsymb = 2*10**(-3); 
@@ -122,11 +106,11 @@ Dxtavg_ = getDxtavg(Dxt_files, Dxtavg_)
 """Source of all misery -- To X-shift or not to?"""
 
 Dxtavg = Dxtavg_ #np.concatenate((Dxtavg_[:, L//2:], Dxtavg_[:,0:L//2]), axis=1) 
-if dtsymb == 5 and param == 'xpa2b0': Dxtavg = Dxtavg_
 
 np.set_printoptions(threshold=sys.maxsize)
-print(Dxtavg[0:10,1::2])
-print(Dxtavg[0:10,::2])
+np.set_printoptions(threshold=sys.maxsize)
+print(Dxtavg[0:steps:100,3*L//8:5*L//8:2])
+
 #D_th = 100*epsilon**2		#not needed 
 
 #####  #####
@@ -145,10 +129,10 @@ def plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs):
     fig, ax = plt.subplots(figsize=(9, 7))  # plt.figure()
     # fig.colorbar(img, orientation='horizontal')
     
-    img = ax.pcolormesh(X, T, Dxtavg[:-1, :-1], cmap='seismic', vmin=0, vmax=1.0)
+    img = ax.pcolormesh(X, dtsymb*T, Dxtavg[:-1, :-1], cmap='seismic', vmin=0, vmax=1.0)
     ax.set_xlabel(r'$\mathbf{x}$')
     ax.set_ylabel(r'$\mathbf{t}$')
-    ax.set_ylim(0, steps)
+    ax.set_ylim(0, dtsymb*steps*8//10)
     # ax.set_title(r'$ \lambda = $ {}, $\mu = $ {}'.format(Lambda, Mu), fontsize=16)  # $D(x,t)$ heat map; $t$ v/s $x$;
     # xticks = ticker.MaxNLocator(7)
     # xticks = np.array([-960, -640, -320, 0, 320, 640, 960])
