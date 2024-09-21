@@ -8,9 +8,12 @@
 import sys
 import math
 import numpy as np
+from scipy.optimize import curve_fit
+
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 plt.style.use('matplotlibrc')
+
 #from decorrfly_nnn import getstepcount
 
 L = int(sys.argv[1])
@@ -30,10 +33,20 @@ inv_dtfact = int(1/(0.1*dtsymb))
 dtstr = f'{dtsymb}emin3'
 epsilon = 10**(-1.0*epss) #0.00001
 
+J21_ratio = J2/J1
+def J21_lamdeci(J21_ratio): 
+    if (int(1000*(J21_ratio%1))<10):
+        return '00'+str(int(1000*(J21_ratio%1)))
+    elif (int(1000*(J21_ratio%1)) < 100):
+        return '0' + str(int(1000*(J21_ratio%1)))
+    else: 
+        return str(int(1000*(J21_ratio%1)))
+J21_strdeci = J21_lamdeci(J21_ratio)
+
 if J1 ==0 and J2==0: J1J2comb='invalidinteraction'
 elif J1 == 0: J1J2comb = 'J2only'
 elif J2 ==0: J1J2comb = 'J1only'
-else: J1J2comb = 'J2byJ1_0pt' + str(int(1000*J2/J1))
+else: J1J2comb = 'J2byJ1_0pt' + J21_strdeci
 
 alpha = (Lambda - Mu)/(Lambda + Mu)
 alphadeci = lambda alpha: ('0' + str(int(100*(alpha%1)))) if (int(100*(alpha%1)) < 10) else (str(int(100*(alpha%1))))
@@ -73,7 +86,7 @@ else:
 filepath = path
 
 def getstepcount():
-    Sp_aj = np.loadtxt(f'{filepath}/Dxt_{str(11003)}.dat', dtype=np.float128) #pick relevant filenum #4002 for L=130
+    Sp_aj = np.loadtxt(f'{filepath}/Dxt_{str(11032)}.dat', dtype=np.float128) #pick relevant filenum #4002 for L=130
     steps = int(Sp_aj.shape[0]/(L))
     print('steps: ', steps)
     return steps
@@ -107,10 +120,24 @@ Dxtavg_ = getDxtavg(Dxt_files, Dxtavg_)
 
 Dxtavg = Dxtavg_ #np.concatenate((Dxtavg_[:, L//2:], Dxtavg_[:,0:L//2]), axis=1) 
 Dnewxt = Dxtavg[:,L//2:]
-logDxt = np.log(Dnewxt/epsilon**2)
+logDxt = np.log(Dnewxt/epsilon**2, dtype=np.float64)
+"""converting logDxt to np.float64 due to a typical error in the scipy.optimize library, which goes as:
+TypeError: Cannot cast array data from dtype('float128') to dtype('float64') according to the rule 'safe'
+Traceback (most recent call last):
+  File "openplot_dxt_logdxt.py", line 186, in <module>
+    kappa, VB = get_VB(cone_spread)
+  File "openplot_dxt_logdxt.py", line 178, in get_VB
+    popt, pcov = curve_fit(f_empirical, xdata, ydata) #tinit --> t
+  File "/apps/codes/anaconda3/lib/python3.7/site-packages/scipy/optimize/minpack.py", line 751, in curve_fit
+    res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
+  File "/apps/codes/anaconda3/lib/python3.7/site-packages/scipy/optimize/minpack.py", line 394, in leastsq
+    gtol, maxfev, epsfcn, factor, diag)
+minpack.error: Result from function call is not a proper array of floats.
+
+"""	
 
 np.set_printoptions(threshold=sys.maxsize)
-print(Dxtavg[0:steps:100,3*L//8:5*L//8:2])
+
 #D_th = 100*epsilon**2		#not needed 
 
 #####  #####
@@ -124,8 +151,8 @@ X = -0.5*x_ +  np.arange(0,x_)
 #Dnewxt = obtainspins(steps*int(1./dt))
 #vel_inst = np.empty(steps*int(1./dt)) 		#not needed
 
-def f_empirical(x,t):
-    return kappa_Lyap*(1 - (t_fact*x/(VB*t))**2)
+def f_empirical(xbyt,kappa_Lyap, V):
+    return kappa_Lyap*(1 - (t_fact*xbyt/V)**2)
 
 #use the following function to guesstimate V_butterfly better
 def check_x_intercept(func):
@@ -134,29 +161,73 @@ def check_x_intercept(func):
         if fi*func[i+1] < 0: 
             x_intercepts.append(i)
             break
-    return x_intercepts[0]
+    if not(x_intercepts): pass 
+    else: return x_intercepts[0]
 
 # this variable is just (10/dtsymb)
 t_fact = int(10/dtsymb)
-VB = 0
+#VB = 0
 print('t/2 log(Dxt)/t')
 
-for t in range(401,steps-400, 2):
-    #print('t = ', t)
-    #print(0.5*t_fact*logDxt[t, ::5]/t)
-    v = t_fact*check_x_intercept(0.5*t_fact*logDxt[t]/t)/t
-    # above is just v = dx/dt; dx is obtained by calling check_x_intercept func
-    VB += v
-    #print('t, logdxtbyepssq : ', t, 2.5*logDxt[t-1,0]/t)
-VB = VB/len(range(401,steps-100, 2))
+"""
+Question: how do you determine tinit now given that kappa is predicted with curve_fit?
+Easy, just check the t at which log(Dxt/epsilon^2) actually gives a valid x-intercept
+"""
+"""
+def get_tinit():
+    for t in range(1, tinit+20):
+        print( t, not(check_x_intercept(0.5*t_fact*logDxt[t-1]/t)))
+        #prints whether the x_intercept is an empty list or not
 
-print(' v_i = ', v)
-print('vB = ', VB)
+get_tinit()
+This gives us tinit = 17; 
+it may vary a bit across configurations, I guess?
+But it still leads to NaN, infinities in the log(Dxt/epsilonsq) array
+so it's just guesstimation at this point
 
+"""
+
+#tinit = 100
 tinit = int(sys.argv[10]) #11-25; 20 is most likely the origin point of the light-cone
-kappa_Lyap = 0.5*t_fact*logDxt[tinit-1, 0]/tinit
-print('t_init, Lyapunov exponent kappa : ', tinit, kappa_Lyap)
+print(Dxtavg[100:tinit+10:10,3*L//8:5*L//8:2])
 
+if L==2048: tfinal = steps-600
+else: tfinal = steps-200
+cone_spread = np.arange(tinit,tfinal)
+#:400 from steps since the cone now covers entire lattice, left to right; 
+# calculate this on the basis of vB, which is approx 2.49 for J2/J1 = 0.625
+
+
+def get_VB(time_range):
+    VB = 0; kappa = 0
+    for t in time_range:
+
+        xcross =  check_x_intercept(0.5*t_fact*logDxt[t-1]/t)
+        v = t_fact*xcross/t
+        #default dtype is np.float64
+        xdata = np.array([x for x in range(-2 + xcross, 2 + xcross)])/t
+        ydata = np.array([ 0.5*t_fact*logDxt[t-1, x]/t for x in range(-2 + xcross, 2+ xcross)])
+        
+        # above is just v = dx/dt; dx is obtained by calling check_x_intercept func
+        popt, pcov = curve_fit(f_empirical, xdata, ydata) #tinit --> t
+        kappa += popt[0]
+        VB += popt[1]
+        # print(' v_i = ', v)
+        # VB += v
+        # print('t, logdxtbyepssq : ', t, 2.5*logDxt[t-1,0]/t)
+    VB = VB/len(time_range)
+    kappa = kappa/len(time_range)
+    return kappa, VB
+    
+kappa, VB = get_VB(cone_spread)
+
+#popt, pcov = curve_fit(fun_empir, xdata, 0.5*t_fact*logDxt[tinit-1, 0]/tinit)
+#kappa_Lyap = 0.5*t_fact*logDxt[tinit-1, 0]/tinit
+print('t_init, Lyapunov exponent kappa, butterfly velocity VB : ', tinit, kappa, VB)
+
+
+with open(f'kappa_Lyap_{tinit}.txt', 'w') as f:
+    f.write(str(kappa))
 
 def plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs):
     # First plot
@@ -179,7 +250,7 @@ def plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs):
     # change J1J2comb with alphastr depending on what the file source is
     # plt.show()
     
-
+    """
     # Second plot -- of sublattices
     fig2, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 7))  # plt.figure()
     # fig.colorbar(img, orientation='horizontal')
@@ -214,6 +285,7 @@ def plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs):
     plt.savefig(f'./plots/Dxt_splitlattices_L{L}_{param}_{J1J2comb}_dt_{dtstr}_{configs}configs.png')
     # change J1J2comb with alphastr depending on what the file source is
     # plt.show()
+    """
     
 def plot_logDxt():
     plt.figure()
@@ -222,6 +294,7 @@ def plot_logDxt():
     #ax2 = axes.inset_axes([0.125, 0.125, 0.525, 0.325])
     #ax2.tick_params(axis='both', which='both', direction='in', width=1.2)
     """ some issue with inset_axes is arising """
+    
     t_array = np.array([100, 150, 200,300, 400, 500]) 
     handle1 = []
     for ti,t  in enumerate(int(2/dtsymb)*t_array): #why (2/dtsymb) and not
@@ -229,12 +302,13 @@ def plot_logDxt():
         #ax2.plot(x, Dnewxt[t], linewidth=1)
         handle1.append(ti)
         
-    t = 100
-    func_empir = f_empirical(x,t)
-
+    t = 100 #??? shouldn't it be tinit in the old version? and now it's probably not needed
+    xbyt = np.arange(0, np.round(1.5*VB, 2), 0.005)
+    func_empir = f_empirical(xbyt,kappa, VB)
+    #>>> last changes: 21-09-2024; 1910
     # Create a legend for the first line.
     first_legend = axes.legend(handles=handle1, title=r'$t = $', ncol=2, loc='upper right')
-    empir_fit, = axes.plot(t_fact*x/t, func_empir, '--k', label=rf'${{{kappa_Lyap:0,.2f}}} (1 - (v/{{{VB:0,.2f}}})^2)$',  linewidth=1.5)
+    empir_fit, = axes.plot(t_fact*xbyt, func_empir, '--k', label=rf'${{{kappa:0,.2f}}} (1 - (v/{{{VB:0,.2f}}})^2)$',  linewidth=1.5)
 
     # Add the legend manually to the Axes.
     axes.add_artist(first_legend)
@@ -255,7 +329,7 @@ def plot_logDxt():
     axes.set_ylabel(r'$\mathbf{\left[ln(D(x,t)/\varepsilon^2)\right]/(2t)} $')
     axes.set_xlim(0,Axlim2)
     #axes.set_ylim(-0.1, 1.1)
-    fig.savefig('./plots/newlogDxtcomplete_{}_{}configs_{}tinit.pdf'.format(param, len(Dxt_files), tinit))
+    fig.savefig(f'./plots/newlogDxtcomplete_L{L}_{param}_{J1J2comb}_{len(Dxt_files)}configs_{tinit}tinit.pdf')
 
  
 plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs)
