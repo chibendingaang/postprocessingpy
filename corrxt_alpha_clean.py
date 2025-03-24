@@ -5,11 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-
 np.set_printoptions(threshold=2561)
 
 L = int(sys.argv[1])
@@ -23,6 +18,15 @@ epss = int(sys.argv[7])
 epsilon = 10**(-1.0*epss)
 choice = int(sys.argv[8])
 #t_smoothness = int(sys.argv[9])
+#hidden = int(sys.argv[9])
+
+#hidden_subfolders = dict()
+#hidden_drifts = [0, -1, -2, -3, -4, -8, -32, -64, -96, -120]
+'''write a conditional that the arg #hidden has to be in hidden_drifts else break the program 
+or better, don\'t invoke the hidden_subfolder dict'''
+#hidden_subfolders.update(zip(hidden_drifts, ['alpha_ne_pm1/drift' + str(np.abs(i)) for i in hidden_drifts]))
+
+hiddensubfolder = 'alpha_ne_pm1' #hidden_subfolders[hidden] if hidden in hidden_drifts else 
 
 #if dtsymb ==2:
 #    fine_res = 1*t_smoothness
@@ -83,20 +87,20 @@ param = label_param()
 
 start  = time.perf_counter()
 
+
 def calc_mconsv_ser(spin, alpha):
-    alpha_ser = alpha**(-np.arange(L))
-    alpha_ser = alpha_ser[:, np.newaxis]
+    alpha_ser = alpha**(-np.arange(L))[:, np.newaxis]  # broadcast the array to the correct shape (2-D: (L,1))
+    return spin * alpha_ser
+    #mconsv[:] = Sp_a[:]*alpha_ser
+    #mdecay[ti,x] = 0.5*(Sp_a[ti,2*x] - Sp_a[ti,(2*x+1)%L]/alpha)/(alpha)**x
 
-    print('alpha_2d shape: ', alpha_ser.shape)
-    mconsv = spin*alpha_ser
-    print('mconsv shape: ', mconsv.shape)
-
-    return mconsv
-
+fine_res = 25
 def calc_Cxt_optimized(steps, spin, alpha):
     #spin = spin[0:steps:fine_res]
     alpha_ = alpha
-    T_array = np.arange(0,110,10,dtype=np.int32)
+    T_array = np.concatenate((np.arange(0,100,5), np.arange(100, 250, 10),np.arange(250,1250, 25),np.arange(1250,1400,10),  np.arange(1400, 1501, 5)))
+    T = T_array.shape[0]
+    #T_array = np.array([20,40,60,80,100,120,160,200,240, 320]) #dtype=np.int32) #exclude delta_t = 0
     T = T_array.shape[0]
     
     Cxt_ = np.zeros((T, L+1)) #indices and timestep value are in 1:10 ratio
@@ -121,42 +125,47 @@ def calc_Cxt_optimized(steps, spin, alpha):
     #safe_dist = int(max(L//2, L*np.power(alpha,-L//2))) if alpha>1 else int(min(L//2, L*np.power(alpha,-L//2)))
     safe_dist = L//2
     r = int(1./dtsymb)
-    t_l = T_array[-1]
-    T_windows = int(steps/t_l)
+    t_l = fine_res
+    #no point in taking less samples when the processing time advantage is negligible 
+    #if hidden ==-3 else T_array[-1]
+    #T_windows = int(steps/t_l)
     #j = file_j
     
-    for ti in T_array: #enumerate(range(0, steps, fine_res)):
+    for ti,t in enumerate(T_array): #enumerate(range(0, steps, fine_res)):
         """
-        Let us keep the number of instances for averaging for highest time-separation the same as the 
-        number of instances to the lowest time-separation;
-        
-        here, highest delta_t = 100 steps; and total steps = 1601; 
-        so we can set 16 t_window sliders for all values of ti
+        depending on our choice, we can keep # of T_windows fixed to some value
+        or as in the following case, fewer windows T-separation increases
         """
+        #if hidden==-3:
+        spin_t = spin[0:-t:t_l] if t>0 else spin[::t_l] #t < T_array[-1] else spin[:-t_l:t_l]
+        spin_t_shifted = spin[t::t_l]
+        #else: #no point in taking less samples when the processing time advantage is negligible 
+        #    spin_t = spin[0:-t:t] # if ti>0 else spin[::ti] #ti=0 is excluded
+        #    spin_t_shifted = spin[t::t] 
 
-        spin_t = spin[t_l-ti::t_l] if ti < 100 else spin[:-t_l:t_l]
-        spin_t_shifted = spin[t_l::t_l]
+        T_windows = spin_t.shape[0]
         print('spin_t shape: ', spin_t.shape)
 
         for x in range(0, safe_dist + 1):
             spin_x = spin_t[:, :-x, :] if x > 0 else spin_t
-            spin_x_shifted = spin_t_shifted[:, x:, :]
+            spin_x_shifted = spin_t_shifted[:, x:, :] #instead of alpha^(-x)
+            X_windows = spin_x.shape[1]
             #print('spin_xt shape: ', spin_x.shape)
-            Cxt_[ti//10, x] = np.sum(np.sum(spin_x * spin_x_shifted, axis=2)) / ((L - x) * (T_windows))
-
+            Cxt_[ti, x] = np.sum(np.sum(spin_x * spin_x_shifted, axis=2)) / ((X_windows) * (T_windows)) #L - x
+            
         for x in range(-safe_dist , 0):
             x_abs = np.abs(x)
             spin_x = spin_t[:, x_abs:, :]
-            spin_x_shifted = spin_t_shifted[:, :L -x_abs, :]
+            spin_x_shifted = spin_t_shifted[:, :-x_abs, :] #alpha^(-x)
+            X_windows = spin_x.shape[1]
             #print('spin_xt shape: ', spin_x.shape)
-            Cxt_[ti//10, x] = np.sum(np.sum(spin_x * spin_x_shifted, axis=2)) / ((L - x_abs) * (T_windows))
-            
+            Cxt_[ti, x] = np.sum(np.sum(spin_x * spin_x_shifted, axis=2)) / ((X_windows) * (T_windows)) #L - x_abs
     return Cxt_
 
-def obtaincorrxt(file_j, path):
 
+def obtaincorrxt(file_j, path):
     Sp_aj = np.loadtxt('{}/spin_a_{}.dat'.format(path,str(begin)))
-    steps = int((Sp_aj.size/(3*L)))
+    steps = min(1601,int(Sp_aj.size/(3*L))) if L==128 else min(3201,int(Sp_aj.size/(3*L))) 
     print('steps = ', steps)
     #stepcount = min(steps, 1601)
 
@@ -168,27 +177,29 @@ def obtaincorrxt(file_j, path):
 
     mconsv = calc_mconsv_ser(Sp_a, alpha)
     mconsv_tot = np.sum(mconsv, axis=1)
-
-    Cxt = calc_Cxt_optimized(steps, mconsv, alpha)
+    Cxt = calc_Cxt_optimized(steps, mconsv, alpha) #mconsv
 
     print('shape of the array Cxt/Cnnxt: \n', Cxt.shape) #Cxt/Cnnxt, energ_1/energ_eta1 respectively
-    return Cxt[1:]/L, mconsv_tot
+    return Cxt#, mconsv_tot #Cxt instead of Cxt[1:], Cxt[0] initially had zero values due to index mismatching
 
 if L==1024: Cxtpath = f'Cxt_series_storage/L{L}/{epstr[epss]}'
 else: Cxtpath = 'Cxt_series_storage/L{}'.format(L)
 
 Cxtpath = f'Cxt_series_storage/lL{L}'
+"""
 energypath = f'H_total_storage/L{L}'
 CExtpath = 'CExt_series_storage/L{}'.format(L)
+"""
 
-nconf = len(range(begin,end))
-Mtotpath = f'H_total_storage/L{L}'
+# nconf = len(range(begin,end)) #we do not divide by nconf till the very last step - at plotting
+
+#Mtotpath = f'H_total_storage/L{L}'
 
 for conf in range(begin, end):
     print(conf)
-    Cxt, mconsv_tot = obtaincorrxt(conf, path_to_directree)
+    Cxt = obtaincorrxt(conf, path_to_directree) #, mconsv_tot
     if param =='xpa2b0' or param == 'qwa2b0' or param == 'xphsbg':
-        f = open(f'./{Cxtpath}/alpha_ne_pm1/Cxt_L{L}_t_{dtstr}_{epstr[epss]}_{param}_{alphastr}_{conf}to{conf+1}config.npy','wb');
+        f = open(f'./{Cxtpath}/{hiddensubfolder}/Cxt_L{L}_t_{dtstr}_jump{fine_res}_{epstr[epss]}_{param}_{alphastr}_{conf}to{conf+1}config.npy','wb');
         np.save(f, Cxt);
         f.close()
 

@@ -68,7 +68,7 @@ def opencorr(L,fine_res=5):
     #else: filerepo = f'./{Cxtpath1}/outall_{alphastr}.txt'
     filerepo = f'./{Cxtpath1}/outall_{alphastr}_jump{fine_res}_prox.txt'
     f = open(filerepo)
-    filename = np.array([name for name in f.read().splitlines()])#[18800:]
+    filename = np.array([name for name in f.read().splitlines()])#[10800:]
     f.close()
     f_last = filename[-1]
 
@@ -153,10 +153,10 @@ def plot_corrxt(ni,n):
         print("area under the curve: ", auc)
 
         #axes00.plot(df['x'], df['y_smooth'], label=f'{t}', linewidth=2)
-        if t in [50,60,70,80,90,100,120,150]:#,125,150,200,250]:
+        if t in [50,100,150,200,250, 300, 350,400]:#,125,150,200,250]:
             axes[0].plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
             ax4.plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
-        if t in [1200,1210,1220,1230,1240,1250]: #[1200,1210,1220,1230,1240, 1250]:
+        if t in [750,800,850,900,950,1000,1100, 1200, 1300, 1400]: #[1200,1210,1220,1230,1240, 1250]:
             axes[1].plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
             ax5.plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)            
             #ax2.plot(x_arr *y[L//2], y/y[L//2], label=f'{int(0.1*dtsymb*t)}', linewidth=1)
