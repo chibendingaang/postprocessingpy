@@ -143,6 +143,7 @@ def calc_Cxt(Cxt_, steps, spin, alpha):
         # ti: {0 -> steps//fine_res + 1}
         #print('time: ', t)
         T = spin.shape[0]
+        spin_t = np.roll(spin, -ti, axis=0)[:T-ti] if ti>0 else spin
         for x in range(-L//2+1,0): #,L): #(-L//2 +1,0) if Cxt_.size was L-1 instead of L+1)
             # consider that this is only open boundary condition here:
             # j = L - x (here, variable x = index i)
@@ -152,7 +153,7 @@ def calc_Cxt(Cxt_, steps, spin, alpha):
             spin_tx = np.vstack((spin[ti:], spin[:ti]))[:T-ti, L+x:] #+x  = -np.abs(x)
             Cxt_[ti, x] = np.sum(np.sum(spin[:T-ti, L+x:]*spin_tx, axis=2))/((L-np.abs(x))*(T-ti))
             '''
-            Cxt_[ti, x] = np.sum(np.sum((spin*np.roll(np.roll(spin,-x,axis=1),-ti,axis=0))[:(T -ti), :L-np.abs(x), :],axis=2))/((L-np.abs(x))*(T - ti)) 
+            Cxt_[ti, x] = np.sum(np.sum((spin_t*np.roll(np.roll(spin_t,-x,axis=1))[:(T -ti), :L-np.abs(x), :],axis=2))/((L-np.abs(x))*(T - ti)) 
             # NOTE: co3fficient of alpha_**(-x) is redundant when mconsv is used as spin
         """     	
         explanation on why midpoint is incorrect: 
