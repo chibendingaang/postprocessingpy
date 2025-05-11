@@ -63,7 +63,7 @@ filepath = path
 
 def getstepcount():
     filenum = 33321
-    Dxt_j = np.loadtxt(f'{filepath}/Dxt_{filenum}.dat', dtype=np.float128) #Dxt__{storefreq}_
+    Dxt_j = np.loadtxt(f'{filepath}/Dxt_{filenum}.dat', dtype=np.float128) #Dxt_{storefreq}_
     steps = int(Dxt_j.shape[0] / L)
     print('steps: ', steps)
     return steps
@@ -76,7 +76,7 @@ with open(f'{filepath}/outdxt.txt', 'r') as Dxt_repo: ## outdxt{storefreq[-3:]}.
 
 print(len(Dxt_files))
 numconfigs = len(Dxt_files)
-print(Dxt_files[0:-1:numconfigs]))
+print(Dxt_files[0:-1:numconfigs])
 
 
 Dxtavg_ = np.zeros((steps, L), dtype=np.float128)
@@ -113,10 +113,11 @@ def check_x_intercept(func):
     if not x_intercepts: pass
     else: return x_intercepts[0]
 
-t_fact = int(prefac / dtsymb)
+t_fact = 10 #int(prefac / dtsymb) # prefac variable can be made redundant
 tinit = int(sys.argv[9])
 
-
+# here the steps is 2521 for L=1024, dt = 0.002
+"""
 if L == 2048:
     if dtsymb==2:
         tfinal = min(steps - prefac * 20, 2401) 
@@ -124,36 +125,59 @@ if L == 2048:
         tfinal = min(steps - prefac * 20, 4801) 
     
 else:
-    tfinal = prefac * min(1601, steps - 4)
+"""
+if dtsymb==2:
+    tfinal = min(steps - t_fact * 60, 2401) 
+if dtsymb==1:
+    tfinal = min(steps - t_fact * 120, 4801) 
 
-cone_spread = np.arange(tinit, tfinal, 1)
+
+cone_spread = np.arange(tinit, tfinal, t_fact)
 
 def get_VB(time_range):
+    #cone_spread array above is time_range
     VB = 0; kappa = 0; V = 0; p_cov = np.zeros((2, 2))
-    for t in time_range:
+    counts_None = 0
+    
+    
+    for t in time_range: 
         xcross = check_x_intercept(0.5 * t_fact * logDxt[t - 1] / t)
-        v = t_fact * xcross / t
-        V += v
         
-        # The following conditionals are highly empirical:
-        if t < prefac * 25:
-            xdata = np.array([x for x in range(-2 + xcross, 3 + xcross)]) / t
-            ydata = np.array([0.5 * t_fact * logDxt[t - 1, x] / t for x in range(-2 + xcross, 3 + xcross)])
-            popt, pcov = curve_fit(f_empirical, xdata, ydata)
-            kappa += popt[0]
-            VB += popt[1]
-            p_cov += pcov
-        elif t < tfinal:
-            xdata = np.array([x for x in range(-3 + xcross, 4 + xcross)]) / t
-            ydata = np.array([0.5 * t_fact * logDxt[t - 1, x] / t for x in range(-3 + xcross, 4 + xcross)])
-            popt, pcov = curve_fit(f_empirical, xdata, ydata)
-            kappa += popt[0]
-            VB += popt[1]
-            p_cov += pcov
+        try:
+            if xcross is not None:
+                v = t_fact * xcross / t
+                V += v
+                print(f"Calculated v: {v}")
+                
+                # The following conditionals are highly empirical:
+                if t < t_fact * 25:
+                    xdata = np.array([x for x in range(-2 + xcross, 3 + xcross)]) / t
+                    ydata = np.array([0.5 * t_fact * logDxt[t - 1, x] / t for x in range(-2 + xcross, 3 + xcross)])
+                    popt, pcov = curve_fit(f_empirical, xdata, ydata)
+                    kappa += popt[0]
+                    VB += popt[1]
+                    p_cov += pcov
+                elif t < tfinal:
+                    xdata = np.array([x for x in range(-3 + xcross, 4 + xcross)]) / t
+                    ydata = np.array([0.5 * t_fact * logDxt[t - 1, x] / t for x in range(-3 + xcross, 4 + xcross)])
+                    popt, pcov = curve_fit(f_empirical, xdata, ydata)
+                    kappa += popt[0]
+                    VB += popt[1]
+                    p_cov += pcov
+            
+            else:
+                print("xcross is None, skipping calculation.")
+                counts_None += 1
+        except TypeError as e:
+            print(f"TypeError occurred: {e}")
+            print("xcross caused a TypeError, skipping calculation.")
+            
+        #v = t_fact * xcross / t
+        
 
-    VB = VB / len(time_range)
-    kappa = kappa / len(time_range)
-    p_cov = p_cov / len(time_range)
+    VB = VB / (len(time_range) - counts_None)
+    kappa = kappa / (len(time_range) - counts_None)
+    p_cov = p_cov / (len(time_range) - counts_None)
     p_stdev = np.sqrt(np.abs(p_cov))
     return kappa, VB, p_cov, p_stdev
 
@@ -207,4 +231,3 @@ def plot_logDxt():
 
 plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs)
 plot_logDxt()
-
