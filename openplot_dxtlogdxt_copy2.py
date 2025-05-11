@@ -114,7 +114,7 @@ def check_x_intercept(func):
     else: return x_intercepts[0]
 
 t_fact = int(prefac / dtsymb)
-tinit = int(sys.argv[10])
+tinit = int(sys.argv[9])
 
 
 if L == 2048:
