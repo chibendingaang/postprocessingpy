@@ -29,15 +29,32 @@ jumpval = int(sys.argv[7])
 epstr = {3: 'emin3', 4: 'emin4', 6: 'emin6', 8: 'emin8', 33: 'min3', 44: 'min4'}
 
 alpha = (Lambda - Mu)/(Lambda + Mu)
-alphadeci = lambda alpha: ('0' + str(int(100*(np.abs(alpha)%1)))) if (int(100*(np.abs(alpha)%1)) < 10) else (str(int(100*(np.abs(alpha)%1))))
-alpha_deci = alphadeci(alpha)
-def alphastr_(alpha):
-    if alpha>=0:
-        return str(int(np.abs(alpha)/1)) + 'pt' + alpha_deci
-    else:
-        return 'min_'+ str(int(np.abs(alpha)/1)) + 'pt' + alpha_deci
-alphastr = alphastr_(alpha)
+
+def get_alpha_deci(alpha):
+    #if alpha>=0:
+      
+    #deci = int(100 * (alpha % 1))
+    #return ('0' + str(deci)) if deci < 10 else str(deci)
+    #just use np.abs(alpha)%1 
+    #if alpha<=0:
+    deci = int(100 * (np.abs(alpha) % 1))
+    deci_th = int(1000*(np.abs(alpha)%1))<10
+    #if np.abs(alpha) < 1 and deci_th:
+    #        return '975'
+    return ('0' + str(deci)) if deci < 10 else str(deci)
+
+alpha_deci = get_alpha_deci(alpha)
+print(alpha_deci)
+
+def get_alphastr(alpha, alpha_deci):
+    if alpha>0:
+        return str(int(alpha / 1)) + 'pt' + alpha_deci
+    if alpha<0:
+        return 'min_' + str(int(np.abs(alpha) / 1)) + 'pt' + alpha_deci
+
+alphastr = get_alphastr(alpha, alpha_deci)
 print('alphastr : ', alphastr)
+
 
 if choice == 0:
     param = 'xpdrvn' if Lambda == 0 and Mu == 1 else 'xphsbg' if Lambda == 1 and Mu == 0 else 'xpa2b0'
@@ -77,7 +94,8 @@ def opencorr(L):
 
         for k, fk  in enumerate(filename):
             Cxtk = np.load(f'./{Cxtpath1}/{fk}', allow_pickle=True)[:steps]
-            if not np.isnan(Cxtk).any():
+            if not np.isnan(Cxtk[:-2]).any(): 
+                # the last element detected can be NaN, so we check till second last element
                 Cxtavg += Cxtk
                 if k%500 ==0: 
                     print('prints the 500the configuration: ', Cxtk)
@@ -121,7 +139,7 @@ def plot_corrxt(magg, Cxtavg, conserved_qty):
     t0 = Cxtavg.shape[0]
     t = t0 - t0 % 16
     #jumpval = 25
-    t_ = np.array([20,40,60,80,100,120]) #np.arange(10,61,10) #array([8,16, 20, 32, 40, 64, 80])
+    t_ = np.array([5, 10, 20,40,60,80,100,120]) #np.arange(10,61,10) #array([8,16, 20, 32, 40, 64, 80])
     #t_ = np.array(t * np.array([1/800, 1/200, 1/50, 2/50, 3/50,4/50, 5/50, 8/50]), dtype=int)
     x = np.arange(-x_//2, x_//2)
     X = np.arange(x_//2)

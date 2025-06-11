@@ -19,13 +19,41 @@ epss, choice = map(int, sys.argv[5:7])
 #hidden = int(sys.argv[7])
 
 alpha = (Lambda - Mu)/(Lambda + Mu)
-N_array = np.concatenate((np.array([0]), np.power(2, np.arange(0,7)), np.array([96, 112, 120, 124, 126, 127])))
+
+def get_alpha_deci(alpha):
+    #if alpha>=0:
+      
+    #deci = int(100 * (alpha % 1))
+    #return ('0' + str(deci)) if deci < 10 else str(deci)
+    #just use np.abs(alpha)%1 
+    #if alpha<=0:
+    deci = int(100 * (np.abs(alpha) % 1))
+    deci_th = int(1000*(np.abs(alpha)%1))<10
+    #if np.abs(alpha) < 1 and deci_th:
+    #        return '975'
+    return ('0' + str(deci)) if deci < 10 else str(deci)
+
+alpha_deci = get_alpha_deci(alpha)
+
+def get_alphastr(alpha, alpha_deci):
+    if alpha>0:
+        return str(int(alpha / 1)) + 'pt' + alpha_deci
+    if alpha<0:
+        return 'min_' + str(int(np.abs(alpha) / 1)) + 'pt' + alpha_deci
+
+alphastr = get_alphastr(alpha, alpha_deci)
+print('alphastr : ', alphastr)
+
 
 # detect what the N is from the input .npy arrays, then decide whether to take the entire N_array
-if alpha > 1:N_array = N_array[:8] # N_array = N_array[7:] 
-elif alpha>0 and alpha<1:  N_array = N_array[7:] #N_array = N_array[:8] 
-hiddensubfolder =  'alpha_ne_pm1/waveN' #if hidden in (-1)*N_array else 'alpha_ne_pm1'
-#print(hiddensubfolder)
+divisions = L//32
+raw = np.concatenate((np.arange(divisions,L//4 +1,divisions), np.array([L//2, 3*L//4]), np.arange(L - divisions*8,L,divisions)))
+
+if np.abs(alpha) > 1: N_array = raw[:10]
+elif 0 < np.abs(alpha) < 1: N_array = raw[8:]
+
+
+hiddensubfolder =  'wave_timeslider' #if hidden in (-1)*N_array else 'alpha_ne_pm1'
 
 versions = dict()
 versions.update(zip(N_array, ['v7'+str(nth) for nth in N_array]))
@@ -34,13 +62,7 @@ dt = 0.001 * dtsymb
 dtstr = f'{dtsymb}emin3'
 epstr = {3: 'emin3', 4: 'emin4', 6: 'emin6', 8: 'emin8', 33: 'min3', 44: 'min4'}
 
-alphadeci = lambda alpha: ('0' + str(int(100*(alpha%1)))) if (int(100*(alpha%1)) < 10) else (str(int(100*(alpha%1))))
-alpha_deci = alphadeci(alpha)
-# the lambda function was not defined for three digit or longer strings 
-if alpha<1: alpha_deci = '975'
-alphastr_ = lambda alpha: str(int(alpha/1)) + 'pt' + alpha_deci
-alphastr = alphastr_(alpha)
-print('alphastr : ', alphastr)
+
 
 if choice == 0:
     param = 'xpdrvn' if Lambda == 0 and Mu == 1 else 'xphsbg' if Lambda == 1 and Mu == 0 else 'xpa2b0'
@@ -61,14 +83,14 @@ def auc_simpson(x,f):
     return auc
 
 
-def opencorr(L,fine_res=5):
-    Cxtpath1 = f'Cxt_series_storage/lL{L}/{hiddensubfolder}'
+def opencorr(L,fine_res=10):
+    Cxtpath1 = f'Cxt_series_storage/L{L}/alpha_ne_pm1/{hiddensubfolder}'
     #if hidden>0:
     #    filerepo = f'./{Cxtpath1}/outall_{alphastr}_jump{fine_res}.txt'
     #else: filerepo = f'./{Cxtpath1}/outall_{alphastr}.txt'
     filerepo = f'./{Cxtpath1}/outall_{alphastr}_jump{fine_res}_prox.txt'
     f = open(filerepo)
-    filename = np.array([name for name in f.read().splitlines()])#[10800:]
+    filename = np.array([name for name in f.read().splitlines()])#[18800:]
     f.close()
     f_last = filename[-1]
 
@@ -95,18 +117,18 @@ from scipy.ndimage import gaussian_filter1d
 def plot_corrxt(ni,n):
     plt.figure()
 
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(12, 12))
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
     #ax2 = axes.inset_axes([0.125, 0.675, 0.25, 0.25])
     #ax3 = axes.inset_axes([0.675, 0.675, 0.25, 0.25])
-    ax4 = axes[0].inset_axes([0.325, 0.125, 0.25, 0.25])
-    ax5 = axes[1].inset_axes([0.325, 0.125, 0.25, 0.25])
+    #ax4 = axes[0].inset_axes([0.325, 0.125, 0.25, 0.25])
+    #ax5 = axes[1].inset_axes([0.325, 0.125, 0.25, 0.25])
     
     Cnnxt_, filenam2 = opencorr(L)
     N, steps, x_ = Cnnxt_.shape 
     print('Cxtavg.shape: ', N, steps, x_)
     print(steps, x_)
     
-    countfiles = 20*filenam2.shape[0] 
+    countfiles = filenam2.shape[0] #20* countfiles; look at the chunking of the configurations before multiplying
     #averaging sample-size chosen =20 ; arbitrary, but stick with it!
 
     Cnnxtavg = Cnnxt_[ni]
@@ -126,8 +148,15 @@ def plot_corrxt(ni,n):
     print(corrxt_.shape)
 
 
-    Tth_step = np.concatenate((np.arange(0,100,5), np.arange(100, 250, 10),np.arange(250,1250, 25),np.arange(1250,1400,10),  np.arange(1400, 1501, 5)))
-    #Tth_step = np.arange(25,1601, 25, dtype=np.int32)
+    if L <=192:
+        Tth_step = np.arange(0, 801, 5)
+    elif L <=256:
+        Tth_step = np.arange(0, 1601, 10)
+    else:
+        Tth_step =  np.concatenate((np.arange(0, 100, 5), np.arange(100, 200, 10), \
+                np.arange(200, 1400, 25), np.arange(1400, 1500, 10), \
+                np.arange(1500, 1601, 5)))
+                
     Cxt_x0 = []
     Cxt_max_xeq = []
     
@@ -153,12 +182,12 @@ def plot_corrxt(ni,n):
         print("area under the curve: ", auc)
 
         #axes00.plot(df['x'], df['y_smooth'], label=f'{t}', linewidth=2)
-        if t in [50,100,150,200,250, 300, 350,400]:#,125,150,200,250]:
-            axes[0].plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
-            ax4.plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
-        if t in [750,800,850,900,950,1000,1100, 1200, 1300, 1400]: #[1200,1210,1220,1230,1240, 1250]:
-            axes[1].plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
-            ax5.plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)            
+        if t in [60,80,100,120,160, 240, 320, 480, 560, 640, 720, 800]:#,125,150,200,250]:
+            axes.plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
+            #ax4.plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
+        #if t in [550,600,650,700,750,800]: #[1250,1260,1270,1280,1290,1300]:
+            #axes[1].plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)
+            #ax5.plot(x_arr, Y_smoothened_G, label=f'{int(dtsymb*0.1*t)}', linewidth=1.2)            
             #ax2.plot(x_arr *y[L//2], y/y[L//2], label=f'{int(0.1*dtsymb*t)}', linewidth=1)
         #ax2.plot(x / ti**(0.5), ti**(0.5) * y, label=f'{dtsymb*jumpval*ti}', linewidth=1) #it was 4*ti earlier because t_ array was defined peculiarly
         #use -loglog_slope instead of 0.5
@@ -181,13 +210,13 @@ def plot_corrxt(ni,n):
     #axes00.legend(title=r'$\mathit{t} = $', fancybox=True, shadow=True, borderpad=1, loc='center left', ncol=2)
     #axes00.set_xlim(max(-32, -3*L//8), min(3*L//8, 32))
     #axes.set_ylim(-0.33, 1.05)
-    ax4.set_xlim(safe_dist_l, min(L//8, L-n))
-    ax5.set_xlim(safe_dist_l, min(L//8, L-n))
+    #ax4.set_xlim(max(safe_dist_l, -L//4), min(L//8, L-n))
+    #ax5.set_xlim(max(safe_dist_l, -L//4), min(L//8, L-n))
     #ax4.set_ylim(-0.25, 1.25)
     #ax5.set_ylim(-0.25, 1.25)
     location_legnd = 'upper right' if alpha>1 else 'upper left'
-    axes[0].legend(title=r'$\mathit{t} $', fancybox=True, shadow=True, borderpad=1, loc=f'{location_legnd}', ncol=2)
-    axes[1].legend(title=r'$\mathit{t} $', fancybox=True, shadow=True, borderpad=1, loc=f'{location_legnd}', ncol=2)
+    axes.legend(title=r'$\mathit{t} $', fancybox=True, shadow=True, borderpad=1, loc=f'{location_legnd}', ncol=2)
+    #axes[1].legend(title=r'$\mathit{t} $', fancybox=True, shadow=True, borderpad=1, loc=f'{location_legnd}', ncol=2)
     #axes.set_xlim(max(-64, -6*L//8), min(6*L//8, 64))
     #ax2.set_xlim(max(-L//16,-33), min(33, L//16) )
     #ax2.yaxis.set_label_position("right")
@@ -197,11 +226,11 @@ def plot_corrxt(ni,n):
     #    axes.set_xlim(-75, 75); ax2.set_xlim(-10,10)
     #axes00.set_xlabel(rf'$\mathbf{{x}} $')
     #axes00.set_ylabel(rf'$\mathbf{{C(x,t)}}$')
-    axes[0].set_title(rf'$n={n}$')
-    axes[0].set_xlabel(rf'$\mathbf{{x}} $')
-    axes[0].set_ylabel(rf'$\mathbf{{C_n(x,t)}}$')
-    axes[1].set_xlabel(rf'$\mathbf{{x}} $')
-    axes[1].set_ylabel(rf'$\mathbf{{C_n(x,t)}}$')    
+    axes.set_title(rf'$n={n}$')
+    axes.set_xlabel(rf'$\mathbf{{x}} $')
+    axes.set_ylabel(rf'$\mathbf{{C_n(x,t)}}$')
+    #axes[1].set_xlabel(rf'$\mathbf{{x}} $')
+    #axes[1].set_ylabel(rf'$\mathbf{{C_n(x,t)}}$')    
     fig.tight_layout()
 
     plt.savefig('./plots/CxtN_vs_x_L{}_{}_{}_{}_prox_{}configs_{}.pdf'.format( L, param, epstr[epss], alphastr, countfiles, versions[n]))
