@@ -21,7 +21,7 @@ np.set_printoptions(threshold=2561)
 
 class CorrxtAnalyzer:
     def __init__(self, begin, end):
-        self.L = params.L
+        self.L = L
         self.dtsymb = params.dtsymb
         self.dt = params.dt
         self.Lambda = lamda #params.Lambda
@@ -50,24 +50,25 @@ class CorrxtAnalyzer:
     
     
     def _get_T_array(self):
-        if self.L == 64 or self.L==128:
+        if self.L <=192:
             return np.arange(0, 801, 5)
-        elif self.L == 192 or self.L==256:
-            return np.arange(0, 1201, self.fine_res)
+        elif self.L <=256:
+            return np.arange(0, 1601, 10)
         else:
-            return np.concatenate((np.arange(0, 100, 5), np.arange(100, 250, 10), \
-                np.arange(250, 1250, 25), np.arange(1250, 1400, 10), \
-                np.arange(1400, 1501, 5)))
+            return np.concatenate((np.arange(0, 100, 5), np.arange(100, 200, 10), \
+                np.arange(200, 1400, 25), np.arange(1400, 1500, 10), \
+                np.arange(1500, 1601, 5)))
     
     def _compute_N_array(self):
-        raw = np.concatenate((np.arange(2,33,2), np.arange(96,128,2)))
+        divisions = self.L//32
+        raw = np.concatenate((np.arange(divisions,self.L//4 +1,divisions), np.array([self.L//2, 3*self.L//4]), np.arange(self.L - divisions*8,self.L,divisions)))
         #np.concatenate((([0]), np.array([1,2,4,8]), np.arange(16, 65, 8),np.arange(80,128,16),  self.L - np.array([8,4,2,1])))
         #np.concatenate([0], np.power(2, np.arange(0, 7)), 128 - np.power(2, np.arange(5,-1,-1)))
-        if self.alpha > 1:
-            return raw[:16]
-        elif 0 < self.alpha < 1:
-            return raw[17:]
-        return raw
+        if self.alpha > 1 or self.alpha < -1:
+            return raw[:10]
+        elif -1 < self.alpha < 1 and self.alpha != 0:
+            return raw[8:]
+        #return raw
 
     def _get_alpha_deci(self, alpha):
         #if alpha>=0:
@@ -78,7 +79,7 @@ class CorrxtAnalyzer:
         #if alpha<=0:
         deci = int(100 * (np.abs(alpha) % 1))
         deci_th = int(1000*(np.abs(alpha)%1))<10
-        if alpha < 1 and deci_th:
+        if np.abs(alpha) < 1 and deci_th:
                 return '975'
         return ('0' + str(deci)) if deci < 10 else str(deci)
 
@@ -183,50 +184,50 @@ class CorrxtAnalyzer:
         return Cxt_, Cxt_energy
 
 
-    def calc_Cxt_site_indexed(self, fine_res_param=5):
+    def calc_Cxt_site_indexed(self, spin): #, fine_res_param=5):
         T = self.T_array.shape[0]
         N = self.N_array.shape[0]
 
         Cxt_n = np.zeros((N, T, self.L))
-        file_src = f'{self.path_to_directree}/outa.txt'
-        t_l = fine_res_param
+        #file_src = f'{self.path_to_directree}/outa.txt'
+        t_l = self.fine_res #fine_res_param
 
         print('T_array shape: ', T)
         print('Cxt shape: ', Cxt_n.shape)
 
-        with open(file_src) as f:
-            spin_list = np.array([name for name in f.read().splitlines()])[self.begin:self.end]
+        #with open(file_src) as f:
+        #    spin_list = np.array([name for name in f.read().splitlines()])[self.begin:self.end]
 
         for ni, n in enumerate(self.N_array):
             safe_dist_r = self.L - n - 1
             safe_dist_l = -n
             print('left/right site limits: ', safe_dist_l, safe_dist_r)
 
-            for src in spin_list:
-                Sp_aj = np.loadtxt(f'{self.path_to_directree}/{src}')
-                steps = int(Sp_aj.size / (3 * self.L))
-                Sp_a = np.reshape(Sp_aj, (steps, self.L, 3))
-                spin = Sp_a
+            #for src in spin_list:
+                #Sp_aj = np.loadtxt(f'{self.path_to_directree}/{src}')
+                #steps = int(Sp_aj.size / (3 * self.L))
+                #Sp_a = np.reshape(Sp_aj, (steps, self.L, 3))
+                #spin = Sp_a
 
-                for ti, t in enumerate(self.T_array):
-                    spin_t = spin[0:-t:t_l] if t > 0 else spin[::t_l]
-                    spin_t_shifted = spin[t::t_l]
-                    T_windows = spin_t.shape[0]
-                    if T_windows == 0:
-                        print('T_windows ', T_windows)
-                        break
+            for ti, t in enumerate(self.T_array):
+                spin_t = spin[0:-t:t_l] if t > 0 else spin[::t_l]
+                spin_t_shifted = spin[t::t_l]
+                T_windows = spin_t.shape[0]
+                if T_windows == 0:
+                    print('T_windows ', T_windows)
+                    break
 
-                    for x in range(safe_dist_l, safe_dist_r + 1):
-                        spin_prod = np.sum(np.sum(spin_t[:, n, :] * spin_t_shifted[:, n + x, :] * self.alpha ** (-2 * n - x), axis=1))
-                        Cxt_n[ni, ti, x] = spin_prod / T_windows
+                for x in range(safe_dist_l, safe_dist_r + 1):
+                    spin_prod = np.sum(np.sum(spin_t[:, n, :] * spin_t_shifted[:, n + x, :] * self.alpha ** (-2 * n - x), axis=1))
+                    Cxt_n[ni, ti, x] = spin_prod / T_windows
 
-                    if np.isnan(Cxt_n).any():
-                        print('NaN value encountered')
-                        break
+                if np.isnan(Cxt_n).any():
+                    print('NaN value encountered')
+                    break
 
         return Cxt_n
 
-    def calc_Cxt_time_indexed(self, fine_res_param=5):
+    def calc_Cxt_time_indexed(self, spin): #, fine_res_param=5):
         # T-array is kept local for the Cxt-time-indexed function 
         #N_array = np.concatenate((([0]), np.array([1,2,4,8]), np.arange(16, 65, 8),np.arange(80,128,16),  self.L - np.array([8,4,2,1])))
         #T_array = np.arange(0, 1501, 5) #steps = 1601
@@ -235,109 +236,108 @@ class CorrxtAnalyzer:
 
         #Cxt_n = np.zeros((N, T, self.L))
         Cxt_ncopy = np.zeros((N, T, self.L))
-        file_src = f'{self.path_to_directree}/outa.txt'
-        t_l = fine_res_param
+        #file_src = f'{self.path_to_directree}/outa.txt'
+        t_l = self.fine_res #_param
 
         print('T_array shape: ', T)
         print('Cxt shape: ', Cxt_ncopy.shape)
 
-        with open(file_src) as f:
-            spin_list = np.array([name for name in f.read().splitlines()])[self.begin:self.end]
+        #with open(file_src) as f:
+            #spin_list = np.array([name for name in f.read().splitlines()])[self.begin:self.end]
 
         for ni, n in enumerate(self.N_array):
             safe_dist_r = self.L - n - 1
             safe_dist_l = -n
             print('left/right site limits: ', safe_dist_l, safe_dist_r)
 
-            for src in spin_list:
-                Sp_aj = np.loadtxt(f'{self.path_to_directree}/{src}')
-                steps = int(Sp_aj.size / (3 * self.L))
-                Sp_a = np.reshape(Sp_aj, (steps, self.L, 3))
-                spin = Sp_a[0::t_l]
-                #spin_t = spin[0::t_l] if t > 0 else spin[::t_l]
-                T_windows = spin.shape[0]
-                if T_windows == 0:
-                    print('T_windows ', T_windows)
+            #for src in spin_list:
+            #    Sp_aj = np.loadtxt(f'{self.path_to_directree}/{src}')
+            #    steps = int(Sp_aj.size / (3 * self.L))
+            #    Sp_a = np.reshape(Sp_aj, (steps, self.L, 3))
+            spin = spin[0::t_l]
+            #spin_t = spin[0::t_l] if t > 0 else spin[::t_l]
+            T_windows = spin.shape[0]
+            if T_windows == 0:
+                print('T_windows ', T_windows)
+                break
+
+            for ti, t in enumerate(self.T_array):
+                #spin_t_shifted = spin[t::t_l]
+                for x in range(safe_dist_l, safe_dist_r+1):
+                    spin_n = spin[0,n,:]
+                    spin_n_shifted = spin[ti,n+x,:]
+                    Cxt_ncopy[ni,ti,x] = np.sum(spin_n*spin_n_shifted)
+                '''
+                for x in range(0, safe_dist_r + 1):
+                    spin_x = spin[0, :-x, :] if x > 0 else spin
+                    spin_x_shifted = spin[ti, x:, :]
+                    X_windows = spin_x.shape[1]
+                    Cxt_n[ni, ti, x] = np.sum(np.sum(spin_x * spin_x_shifted, axis=1)) / (X_windows)
+                    """ New change:
+                    Cxt_ncopy[ni,ti,x] = np.sum(spin[0,n,:]*spin[ti,n+x,:], axis=1)
+                    """
+
+                for x in range(safe_dist_l, 0):
+                    x_abs = np.abs(x)
+                    spin_x = spin[0, x_abs:, :]
+                    spin_x_shifted = spin[ti, :-x_abs, :]
+                    X_windows = spin_x.shape[1]
+                    Cxt_n[ni, ti, x] = np.sum(np.sum(spin_x * spin_x_shifted, axis=1)) / (X_windows)
+                '''
+                if np.isnan(Cxt_ncopy).any(): #Cxt_n
+                    print('NaN value encountered')
                     break
-
-                for ti, t in enumerate(self.T_array):
-                    #spin_t_shifted = spin[t::t_l]
-                    for x in range(safe_dist_l, safe_dist_r+1):
-                        spin_n = spin[0,n,:]
-                        spin_n_shifted = spin[ti,n+x,:]
-                        Cxt_ncopy[ni,ti,x] = np.sum(spin_n*spin_n_shifted)
-                    '''
-                    for x in range(0, safe_dist_r + 1):
-                        spin_x = spin[0, :-x, :] if x > 0 else spin
-                        spin_x_shifted = spin[ti, x:, :]
-                        X_windows = spin_x.shape[1]
-                        Cxt_n[ni, ti, x] = np.sum(np.sum(spin_x * spin_x_shifted, axis=1)) / (X_windows)
-                        """ New change:
-                        Cxt_ncopy[ni,ti,x] = np.sum(spin[0,n,:]*spin[ti,n+x,:], axis=1)
-
-                        """
-
-                    for x in range(safe_dist_l, 0):
-                        x_abs = np.abs(x)
-                        spin_x = spin[0, x_abs:, :]
-                        spin_x_shifted = spin[ti, :-x_abs, :]
-                        X_windows = spin_x.shape[1]
-                        Cxt_n[ni, ti, x] = np.sum(np.sum(spin_x * spin_x_shifted, axis=1)) / (X_windows)
-                    '''
-                    if np.isnan(Cxt_ncopy).any(): #Cxt_n
-                        print('NaN value encountered')
-                        break
 
         return Cxt_ncopy #Cxt_n
 
-    def calc_Cxt_time_indexed_full_timerange(self, fine_res_param=5):
+    def calc_Cxt_time_indexed_full_timerange(self, spin): #, fine_res_param=5):
         # T-array is kept local for the Cxt-time-indexed function 
         #N_array = np.concatenate((([0]), np.array([1,2,4,8]), np.arange(16, 65, 8),np.arange(80,128,16),  self.L - np.array([8,4,2,1])))
-        T_array = np.arange(0, 1501, 5) #steps = 1601
-        T = T_array.shape[0]
+        #T_array = np.arange(0, 1501, 5) #steps = 1601
+        T = self.T_array.shape[0]
         N = self.N_array.shape[0]
 
         Cxt_n = np.zeros((N, T, self.L))
         #Cxt_ncopy = np.zeros((N, T, self.L))
-        file_src = f'{self.path_to_directree}/outa.txt'
-        t_l = fine_res_param
+        #file_src = f'{self.path_to_directree}/outa.txt'
+        t_l = self.fine_res #_param
 
         print('T_array shape: ', T)
         print('Cxt shape: ', Cxt_n.shape)
 
-        with open(file_src) as f:
-            spin_list = np.array([name for name in f.read().splitlines()])[self.begin:self.end]
+        #with open(file_src) as f:
+        #    spin_list = np.array([name for name in f.read().splitlines()])[self.begin:self.end]
 
         for ni, n in enumerate(self.N_array):
             safe_dist_r = self.L - n - 1
             safe_dist_l = -n
             print('left/right site limits: ', safe_dist_l, safe_dist_r)
 
-            for src in spin_list:
-                Sp_aj = np.loadtxt(f'{self.path_to_directree}/{src}')
-                steps = int(Sp_aj.size / (3 * self.L))
-                Sp_a = np.reshape(Sp_aj, (steps, self.L, 3))
-                spin = Sp_a[0::t_l]
-                #spin_t = spin[0::t_l] if t > 0 else spin[::t_l]
-                T_windows = spin.shape[0]
-                if T_windows == 0:
-                    print('T_windows ', T_windows)
+            #for src in spin_list:
+            #    Sp_aj = np.loadtxt(f'{self.path_to_directree}/{src}')
+            #    steps = int(Sp_aj.size / (3 * self.L))
+            #    Sp_a = np.reshape(Sp_aj, (steps, self.L, 3))
+            spin = spin[0::t_l]
+            #spin_t = spin[0::t_l] if t > 0 else spin[::t_l]
+            T_windows = spin.shape[0]
+            if T_windows == 0:
+                print('T_windows ', T_windows)
+                break
+
+            for ti, t in enumerate(T_array):
+                #spin_t_shifted = spin[t::t_l]
+                for x in range(safe_dist_l, safe_dist_r+1):
+                    spin_n = spin[0,n,:]
+                    spin_n_shifted = spin[ti,n+x,:]
+                    Cxt_n[ni,ti,x] = np.sum(spin_n*spin_n_shifted* self.alpha ** (-2 * n - x))
+
+                if np.isnan(Cxt_n).any(): #Cxt_n
+                    print('NaN value encountered')
                     break
-
-                for ti, t in enumerate(T_array):
-                    #spin_t_shifted = spin[t::t_l]
-                    for x in range(safe_dist_l, safe_dist_r+1):
-                        spin_n = spin[0,n,:]
-                        spin_n_shifted = spin[ti,n+x,:]
-                        Cxt_n[ni,ti,x] = np.sum(spin_n*spin_n_shifted* self.alpha ** (-2 * n - x))
-
-                    if np.isnan(Cxt_n).any(): #Cxt_n
-                        print('NaN value encountered')
-                        break
 
         return Cxt_n
     
-    def calc_Cxt_time_indexed_unweighted(self, fine_res_param=5):
+    def calc_Cxt_time_indexed_unweighted(self, spin): #, fine_res_param=5):
         # T-array is kept local for the Cxt-time-indexed function 
         #N_array = np.concatenate((([0]), np.array([1,2,4,8]), np.arange(16, 65, 8),np.arange(80,128,16),  self.L - np.array([8,4,2,1])))
         T_array = np.arange(0, 1501, 5) #steps = 1601
@@ -346,65 +346,84 @@ class CorrxtAnalyzer:
 
         Cxt_n = np.zeros((N, T, self.L))
         #Cxt_ncopy = np.zeros((N, T, self.L))
-        file_src = f'{self.path_to_directree}/outa.txt'
-        t_l = fine_res_param
+        #file_src = f'{self.path_to_directree}/outa.txt'
+        t_l = self.fine_res #_param
 
         print('T_array shape: ', T)
         print('Cxt shape: ', Cxt_n.shape)
 
-        with open(file_src) as f:
-            spin_list = np.array([name for name in f.read().splitlines()])[self.begin:self.end]
+        #with open(file_src) as f:
+        #    spin_list = np.array([name for name in f.read().splitlines()])[self.begin:self.end]
 
         for ni, n in enumerate(self.N_array):
             safe_dist_r = self.L - n - 1
             safe_dist_l = -n
             print('left/right site limits: ', safe_dist_l, safe_dist_r)
 
-            for src in spin_list:
-                Sp_aj = np.loadtxt(f'{self.path_to_directree}/{src}')
-                steps = int(Sp_aj.size / (3 * self.L))
-                Sp_a = np.reshape(Sp_aj, (steps, self.L, 3))
-                spin = Sp_a[0::t_l]
-                #spin_t = spin[0::t_l] if t > 0 else spin[::t_l]
-                T_windows = spin.shape[0]
-                if T_windows == 0:
-                    print('T_windows ', T_windows)
+            #for src in spin_list:
+            #    Sp_aj = np.loadtxt(f'{self.path_to_directree}/{src}')
+            #    steps = int(Sp_aj.size / (3 * self.L))
+            #    Sp_a = np.reshape(Sp_aj, (steps, self.L, 3))
+            spin = spin[0::t_l]
+            #spin_t = spin[0::t_l] if t > 0 else spin[::t_l]
+            T_windows = spin.shape[0]
+            if T_windows == 0:
+                print('T_windows ', T_windows)
+                break
+
+            for ti, t in enumerate(T_array):
+                #spin_t_shifted = spin[t::t_l]
+                for x in range(safe_dist_l, safe_dist_r+1):
+                    spin_n = spin[0,n,:]
+                    spin_n_shifted = spin[ti,n+x,:]
+                    Cxt_n[ni,ti,x] = np.sum(spin_n*spin_n_shifted)
+                if np.isnan(Cxt_n).any(): #Cxt_n
+                    print('NaN value encountered')
                     break
-
-                for ti, t in enumerate(T_array):
-                    #spin_t_shifted = spin[t::t_l]
-                    for x in range(safe_dist_l, safe_dist_r+1):
-                        spin_n = spin[0,n,:]
-                        spin_n_shifted = spin[ti,n+x,:]
-                        Cxt_n[ni,ti,x] = np.sum(spin_n*spin_n_shifted)
-
-                    if np.isnan(Cxt_n).any(): #Cxt_n
-                        print('NaN value encountered')
-                        break
 
         return Cxt_n
 
+    def save_Cxt_optimized(self, Cxt, Cxt_energy, Htotal, conf):
+        # this is to save one configuration at a time
+        out_file = f'./{self.Cxtpath}/alpha_ne_pm1/Cxt_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
+                                f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config.npy'
+        with open(out_file, 'wb') as f_out:
+            np.save(f_out, Cxt)
 
-    def save_Cxt_site_indexed(self, Cxt_n):
-        filename = f'./{self.Cxtpath}/{self.hiddensubfolder}/wave_timeslider_N/CxtN_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
-                   f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{self.begin}to{self.end}configth_proximalbndry.npy'
-        with open(filename, 'wb') as f:
-            np.save(f, Cxt_n)
-        print(f'CxtN saved to: {filename}')
+        out_file2 = f'./{self.Cxtpath}/alpha_ne_pm1/Cxt_energy_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
+                                f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config.npy'
+        with open(out_file2, 'wb') as f_out:
+            np.save(f_out, Cxt_energy)
+                    
+        out_file3 = f'./{self.Cxtpath}/alpha_ne_pm1/total_energy_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
+                                f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config.npy'
+        with open(out_file3, 'wb') as f_out:
+            np.save(f_out, Htotal)
 
-    def save_Cxt_time_indexed(self, Cxt_n):
-        filename = f'./{self.Cxtpath}/{self.hiddensubfolder}/wave_siteslider_N/CxtN_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
-                   f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{self.begin}to{self.end}configth_proximalbndry.npy'
-        with open(filename, 'wb') as f:
-            np.save(f, Cxt_n)
-        print(f'CxtN saved to: {filename}')
+        print(f'Cxt_tot saved to: {out_file}')
 
-    def save_Cxt_time_indexed_full_timerange(self, Cxt_n):
-        filename = f'./{self.Cxtpath}/{self.hiddensubfolder}/wave_siteslider_N/full_timerange/CxtN_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
-                   f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{self.begin}to{self.end}configth_proximalbndry.npy'
-        with open(filename, 'wb') as f:
+    def save_Cxt_site_indexed(self, Cxt_n, conf):
+        # this includes Cxt_n which saves all configurations at once
+        out_file = f'./{self.Cxtpath}/alpha_ne_pm1/wave_timeslider/CxtN_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
+                   f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config_proximalbndry.npy'
+        with open(out_file, 'wb') as f:
             np.save(f, Cxt_n)
-        print(f'CxtN saved to: {filename}')
+        print(f'CxtN saved to: {out_file}')
+
+    def save_Cxt_time_indexed(self, Cxt_n, conf):
+        out_file = f'./{self.Cxtpath}/alpha_ne_pm1/wave_siteslider/CxtN_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
+                   f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config_proximalbndry.npy'
+        with open(out_file, 'wb') as f:
+            np.save(f, Cxt_n)
+        print(f'CxtN saved to: {out_file}')
+
+    def save_Cxt_time_indexed_full_timerange(self, Cxt_n, conf):
+        out_file = f'./{self.Cxtpath}/alpha_ne_pm1/wave_siteslider/full_timerange/CxtN_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
+                   f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config_proximalbndry.npy'
+        # earlier: {self.begin}to{self.end}configth; to save in chunks
+        with open(out_file, 'wb') as f:
+            np.save(f, Cxt_n)
+        print(f'CxtN saved to: {out_file}')
     
     #@profile
     def obtaincorrxt(self, conf):
@@ -443,7 +462,7 @@ class CorrxtAnalyzer:
         return Sp_a, Cxt, Cxt_energy
 
     #@profile
-    def process_all_configs(self):
+    def process_all_configs(self, func_sumornot = 0): # 0 is the default value
         h5file_path = f'spin_trajectories_L{self.L}_alpha_{self.alphastr}.h5'
         start = time.perf_counter()
 
@@ -460,24 +479,23 @@ class CorrxtAnalyzer:
                 print('Sp_a shape:', Sp_a.shape)
 
                 mconsv, Hconsv, Htotal = self.calc_mconsv_Hconsv(Sp_a)
-                Cxt, Cxt_energy = self.calc_Cxt_optimized(mconsv, Hconsv) #steps = Sp_a.shape[0]
-                
 
                 if self.param in ['xpa2b0', 'qwa2b0', 'xphsbg']:
-                    out_file = f'./{self.Cxtpath}/{self.hiddensubfolder}/Cxt_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
-                                f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config.npy'
-                    with open(out_file, 'wb') as f_out:
-                        np.save(f_out, Cxt)
-
-                    out_file2 = f'./{self.Cxtpath}/{self.hiddensubfolder}/Cxt_energy_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
-                                f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config.npy'
-                    with open(out_file2, 'wb') as f_out:
-                        np.save(f_out, Cxt_energy)
-                    
-                    out_file3 = f'./{self.Cxtpath}/{self.hiddensubfolder}/total_energy_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
-                                f'{self.epstr[self.epss]}_{self.param}_{self.alphastr}_{conf}to{conf + 1}config.npy'
-                    with open(out_file3, 'wb') as f_out:
-                        np.save(f_out, Htotal)
+                    if func_sumornot == 1:
+                        Cxt_n = self.calc_Cxt_site_indexed(Sp_a)
+                        self.save_Cxt_site_indexed(Cxt_n, conf)
+    
+                    elif func_sumornot == 2:
+                        Cxt_n = self.calc_Cxt_time_indexed(Sp_a)
+                        self.save_Cxt_time_indexed(Cxt_n, conf)
+    
+                    elif func_sumornot == 3:
+                        Cxt_n = self.calc_Cxt_time_indexed_full_timerange(Sp_a)
+                        self.save_Cxt_time_indexed_full_timerange(Cxt_n, conf)    
+    
+                    else:
+                        Cxt, Cxt_energy = self.calc_Cxt_optimized(mconsv, Hconsv) #steps = Sp_a.shape[0]
+                        self.save_Cxt_optimized(Cxt, Cxt_energy, Htotal, conf)
                     
                     # self.Magxt
                     """out_spinfile = f'./Magxt_series_storage/Mxt_L{self.L}_t_{self._get_dtstr()}_jump{self.fine_res}_' \
@@ -492,7 +510,7 @@ class CorrxtAnalyzer:
         print('processing time = ', time.perf_counter() - start)
 
 
-    def process_all_configs_old(self):
+    def process_all_configs_old(self): 
         start = time.perf_counter()
 
         for conf in range(self.begin, self.end):
@@ -512,14 +530,17 @@ class CorrxtAnalyzer:
 
 
 if __name__ == '__main__':
-    begin = int(sys.argv[1])
-    end = int(sys.argv[2])
-    fine_res = int(sys.argv[3])
-    lamda = float(sys.argv[4])
-    mu = float(sys.argv[5])
-    full_tmrng = 0 if end-begin==50 else 1
+    L = int(sys.argv[1])
+    begin = int(sys.argv[2])
+    end = int(sys.argv[3])
+    fine_res = int(sys.argv[4])
+    lamda = float(sys.argv[5])
+    mu = float(sys.argv[6])
+    #full_tmrng = 0 if end-begin==50 else 1
     analyzer = CorrxtAnalyzer(begin, end)
-    analyzer.process_all_configs()
+    analyzer.process_all_configs(func_sumornot=1)
+    #analyzer.process_all_configs(func_sumornot=2)
+    
     #if full_tmrng == 0:
     #    CxtN_t = analyzer.calc_Cxt_time_indexed()
     #    analyzer.save_Cxt_time_indexed(CxtN_t)
