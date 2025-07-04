@@ -11,7 +11,9 @@ from scipy.interpolate import CubicSpline
 import pandas as pd 
 from scipy import stats 
 from scipy.ndimage import gaussian_filter1d
+
 plt.style.use('matplotlibrc')
+from matplotlib.ticker import ScalarFormatter, FuncFormatter, LogFormatterSciNotation
 plt.rcParams['text.usetex'] = False
 np.set_printoptions(threshold=2561)
 
@@ -81,30 +83,31 @@ def opencorr(L):
     #if L == 2048 and dtsymb == 2: filerepo = f'./{Cxtpath1}_yonder/poutall.txt'
     filerepo = f'./{Cxtpath1}/outall_{alphastr}_jump{jumpval}.txt'
     filerepo2 = f'./{Cxtpath1}/outall_energy_{alphastr}_jump{jumpval}.txt'
-
+    
     for frepo in [filerepo, filerepo2]:
         f = open(frepo)
-        filename = np.array([name for name in f.read().splitlines()])#[:248]
+        filearray = np.array([name for name in f.read().splitlines()])#[2000:3536]
         f.close()
-        f_last = filename[-1]
-        Cxtk = np.load(f'./{Cxtpath1}/{f_last}', allow_pickle=True)
-        steps = int(Cxtk.size/(L+1)) #2*L-1
+        f_last = filearray[-1]
+        Cxtk_0 = np.load(f'./{Cxtpath1}/{f_last}', allow_pickle=True)
+        steps = int(Cxtk_0.size/(L+1)) #2*L-1
+        valid_count = 0
+        Cxtavg = np.zeros_like(Cxtk_0) #((steps,L+1))
 
-        Cxtavg = np.zeros_like(Cxtk) #((steps,L+1))
-
-        for k, fk  in enumerate(filename):
+        for k, fk  in enumerate(filearray):
             Cxtk = np.load(f'./{Cxtpath1}/{fk}', allow_pickle=True)[:steps]
             if not np.isnan(Cxtk[:-2]).any(): 
                 # the last element detected can be NaN, so we check till second last element
                 Cxtavg += Cxtk
+                valid_count += 1
                 if k%500 ==0: 
-                    print('prints the 500the configuration: ', Cxtk)
-                countfiles = filename.shape[0]
+                    print('prints the 500th configuration: ', Cxtk)
             else:
                 print('NaN value detected at file-index = ', k)
-            if frepo==filerepo: Cxt_= Cxtavg
-            if frepo==filerepo2: Cxt_energy = Cxtavg
-    return countfiles, Cxt_, Cxt_energy
+        
+        if frepo==filerepo: Cxt_= Cxtavg; countfiles1 = valid_count; print(f'countfiles Mag: {countfiles1}')
+        if frepo==filerepo2: Cxt_energy = Cxtavg ; countfiles2 = valid_count; print(f'countfiles Enrg: {countfiles2}')
+    return countfiles1, countfiles2, Cxt_, Cxt_energy
         
 
 def peak(x, c, sigmasq):
@@ -128,8 +131,8 @@ def plot_corrxt(magg, Cxtavg, conserved_qty):
     plt.figure()
 
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(11, 9))
-    ax2 = axes.inset_axes([0.125, 0.675, 0.25, 0.25])
-    ax3 = axes.inset_axes([0.675, 0.675, 0.25, 0.25])
+    ax2 = axes.inset_axes([0.07, 0.63, 0.26, 0.26])
+    ax3 = axes.inset_axes([0.70, 0.63, 0.26, 0.26])
     #ax4 = axes.inset_axes([0.675, 0.200, 0.25, 0.25])
     
     steps, x_ = Cxtavg.shape
@@ -139,6 +142,7 @@ def plot_corrxt(magg, Cxtavg, conserved_qty):
     t0 = Cxtavg.shape[0]
     t = t0 - t0 % 16
     #jumpval = 25
+    # for dt = 0.002; storage at every 100th step; jumpval = 10; Dt = 2; every time index is a jump of 2 time steps
     t_ = np.array([5, 10, 20,40,60,80,100,120]) #np.arange(10,61,10) #array([8,16, 20, 32, 40, 64, 80])
     #t_ = np.array(t * np.array([1/800, 1/200, 1/50, 2/50, 3/50,4/50, 5/50, 8/50]), dtype=int)
     x = np.arange(-x_//2, x_//2)
@@ -152,6 +156,8 @@ def plot_corrxt(magg, Cxtavg, conserved_qty):
     print("corrxt_ shape: (t, # plotting sites)")
     print(corrxt_.shape)
     
+    # slope calculation of the loglog C(0,t) v/s t is pointless exercise for |alpha| .neq. 1
+    """
     dY_ = np.log(corrxt_[2, L//2] / corrxt_[-8, L//2]) #-0.533, when span: np.arange(t)[2:-3 ]
     dX_ = np.log( np.arange(t)[2] / ( np.arange(t)[-8]))
     loglog_slope = np.round(dY_/dX_, 4)
@@ -159,17 +165,18 @@ def plot_corrxt(magg, Cxtavg, conserved_qty):
 
     # check fwhm
     fwhm = []
-    #for ti in range(0,t):
-    #    fwhm.append(half_max_x(x, corrxt_)[1:-3])
-    # check C(0,t) inv of the length scale
+    for ti in range(0,t):
+        fwhm.append(half_max_x(x, corrxt_)[1:-3])
+     check C(0,t) inv of the length scale
 
     # Perform linear regression
-    #slope, intercept, r_value, p_value, std_err = stats.linregress(dX_, dY_)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(dX_, dY_)
 
-    #print(f"Slope (alpha): {slope:.4f}")
-    #print(f"Intercept (log A): {intercept:.4f}")
-    #print(f"Standard error of slope: {std_err:.4f}")
-    #print(f"R-squared: {r_value**2:.4f}")   
+    print(f"Slope (alpha): {slope:.4f}")
+    print(f"Intercept (log A): {intercept:.4f}")
+    print(f"Standard error of slope: {std_err:.4f}")
+    print(f"R-squared: {r_value**2:.4f}")   
+    """
     
     for ti in t_:
         # corrxt_
@@ -200,7 +207,10 @@ def plot_corrxt(magg, Cxtavg, conserved_qty):
     #ax4.plot(dtsymb*np.arange(corrxt_.shape[0])[1:-3], fwhm, linewidth=2)
     #plotting the inverse of C(0,t)
     #ax4.loglog(dtsymb*np.arange(corrxt_.shape[0])[1:-3], corrxt_[1,L//2]/corrxt_[1:-3, L//2], '.k', linewidth=1.2) 
-    ax3.loglog(dtsymb*int(jumpval/5)*np.arange(corrxt_.shape[0])[1:-3], corrxt_[1,L//2]/corrxt_[1:-3, L//2], '.k', linewidth=1.2) 
+    ax3.loglog(dtsymb*int(jumpval/10)*np.arange(corrxt_.shape[0])[1:-3], 1/corrxt_[1:-3, L//2], '.k', linewidth=1.2) 
+    #1. dtsymb*int(jumpval/5) worked when we used to set jumpval = 5 for dtsymb=2; 
+    # when jumpval=10 is the default screening of timesteps, you should divide it by 10 itself!
+    #2. avoid scaling the 1/C(0,t) plot with corrxt_[1,L//2]
 
     #ax3.loglog(dtsymb*np.arange(corrxt_.shape[0])[1:-3], corrxt_[1:-3, L//2]/corrxt_[1,L//2], '.k', linewidth=2)
     # do not multiply by jumpval in the X-axis array when jumpval = 5; but systemize it
@@ -209,32 +219,49 @@ def plot_corrxt(magg, Cxtavg, conserved_qty):
     axes.set_xlim(max(-32, -64), min(64, 32))
     #ax2.set_xlim(max(-L//8,-33), min(33, L//8) )
     ax2.yaxis.set_label_position("right")
-    if param == 'qwdrvn': 
-        axes.set_xlim(-75, 75); ax2.set_xlim(-10,10)
+    #if param == 'qwdrvn': 
+    ax2.set_xlim(-25,25) if conserved_qty=='mag' else ax2.set_xlim(-10,10)
+        
     axes.set_xlabel(rf'$\mathbf{{x}} $')
-    axes.set_ylabel(rf'$\mathbf{{C(x,t)}}$')
-    ax2.set_xlabel(rf'$\mathbf{{x*C(0,t)}}$') #/t^{{{-loglog_slope:.3f}}}
-    ax2.set_ylabel(rf'$\mathbf{{C(x,t)/C(0,t)}}$') #t^-{{{loglog_slope:.3f}}*C(x,t)
+    axes.set_ylabel(rf'$\mathbf{{C(x,t)}}$') 
+    ax2.set_xlabel(rf'$\mathbf{{xC(0,t)}}$', fontsize=14, fontweight='normal', fontstyle='italic') #/t^{{{-loglog_slope:.3f}}}
+    ax2.set_ylabel(rf'$\mathbf{{C(x,t)/C(0,t)}}$', fontsize=14, fontweight='normal', fontstyle='italic') #t^-{{{loglog_slope:.3f}}*C(x,t)
     ax2.yaxis.tick_right()
     ax2.yaxis.set_label_position("left")
-    ax3.set_xlabel(r'$\mathbf{t}$')
-    ax3.set_ylabel(rf'$\mathbf{{1/C(0,t)}}$')
+    
+    
+    # to avoid the scientific notation in the log-log / semilog subplot
+    #def no_sci_format(x, pos):
+    #    return f"{x:.2f}" 
+    #ax3.yaxis.set_major_formatter(FuncFormatter(no_sci_format))
+    from matplotlib.ticker import ScalarFormatter
+    '''formatter = ScalarFormatter(useMathText=False)
+    formatter.set_scientific(False)
+    formatter.set_useOffset(False)'''
+    formatter = FuncFormatter(lambda val, _: f"{val:.1f}")
+    ax3.yaxis.set_major_formatter(formatter)
+    
+    ax3.set_xlabel(r'$\mathbf{t}$', fontsize=14, fontweight='normal', fontstyle='italic')
+    ax3.set_ylabel(rf'$\mathbf{{1/C(0,t)}}$', fontsize=14, fontweight='normal', fontstyle='italic')
     ax3.yaxis.tick_left()
+    ax3.set_yticks([ 0.6, 0.8, 1.0, 1.2, 1.4]) if conserved_qty=='mag' else ax3.set_yticks([2, 4, 6])
     ax3.yaxis.set_label_position("right")
-    axes.set_title(rf'$\alpha = $ {alpha}')
-    ax3.set_title(rf'd log(C(0,t))/d log(t) = {loglog_slope:.3f}')
-    ax3.title.set_fontsize(9)
+    
+    #axes.set_title(rf'$\alpha = $ {alpha}')
+    #ax3.set_title(rf'd log(C(0,t))/d log(t) = {loglog_slope:.3f}')
+    #ax3.title.set_fontsize(9)
     fig.tight_layout()
+    
     if conserved_qty == 'mag':
-        plt.savefig('./plots/{}_vs_x_L{}_{}_{}_jump{}_{}_{}configs_v5.pdf'.format(corr[magg], L, param, epstr[epss], jumpval,alphastr, countfiles))
+        plt.savefig('./plots/{}_vs_x_L{}_{}_{}_jump{}_{}_{}configs_v5.pdf'.format(corr[magg], L, param, epstr[epss], jumpval,alphastr, countfiles1))
     if conserved_qty == 'energy':
-        plt.savefig('./plots/{}_energy_vs_x_L{}_{}_{}_jump{}_{}_{}configs_v5.pdf'.format(corr[magg], L, param, epstr[epss], jumpval,alphastr, countfiles))
+        plt.savefig('./plots/{}_energy_vs_x_L{}_{}_{}_jump{}_{}_{}configs_v5.pdf'.format(corr[magg], L, param, epstr[epss], jumpval,alphastr, countfiles2))
 
 if __name__ == "__main__":
-    countfiles, Cxt_, Cxt_energy = opencorr(L)
+    countfiles1, countfiles2, Cxt_, Cxt_energy = opencorr(L)
     #countfiles = filenam2.shape[0]
-    Cxtavg = Cxt_ / (countfiles)
-    Cxt_energy_avg = Cxt_energy/(countfiles)
+    Cxtavg = Cxt_ / (countfiles1)
+    Cxt_energy_avg = Cxt_energy/(countfiles2)
     plot_corrxt('ab', Cxt_, 'mag')
     plot_corrxt('ab', Cxt_energy, 'energy')
 
