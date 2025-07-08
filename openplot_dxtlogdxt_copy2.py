@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 import sys
 import math
 import numpy as np
@@ -15,6 +16,7 @@ dt = 0.001 * dtsymb
 Lambda, Mu = map(float, sys.argv[3:5])
 begin, end, epss = map(int, sys.argv[5:8])
 J21_theta = sys.argv[8]
+# to be entered as a string, as a multiple of piby20 (9 deg); e.g.: 2piby20
 print('J21_theta', J21_theta)
 
 storefreq = 'every200'
@@ -29,6 +31,32 @@ dtstr = f'{dtsymb}emin3'
 epsilon = 10**(-1.0 * epss)
 
 J1J2comb = f'J21_theta_{J21_theta}'
+if J21_theta == '0pi': J1J2comb = f'J1only'
+if J21_theta == 'halfpi': J1J2comb = f'J2only'
+
+
+import re
+def parse_piby_expr(expr):
+    # Match patterns like '3piby20' or 'npiby20'
+    match = re.match(r'^(\d+|n)pi(?:by|/)(\d+)$', expr)
+    if not match:
+        raise ValueError(f"Invalid format: {expr}")
+    
+    num_str, denom_str = match.groups()
+    n = 1 if num_str == 'n' else int(num_str)
+    denom = int(denom_str)
+    
+    return n * np.pi / denom
+
+# Example usage
+#for x in '23456789':
+#    expr = parse_piby_expr(f'{x}piby20')
+#    print(np.tan(expr))  # → tan(3π/20)
+
+theta = parse_piby_expr(J21_theta) #3*np.pi/20 # this should ideally be extracted from the J21_theta input
+tan = np.tan(theta)
+J21_val = np.sqrt( 1 + min(1, tan, 1/tan)**2)
+print('J21_val = ', J21_val)
 
 alpha = (Lambda - Mu)/(Lambda + Mu)
 alphadeci = lambda alpha: ('0' + str(int(100*(alpha % 1)))) if (int(100*(alpha % 1)) < 10) else (str(int(100*(alpha % 1))))
@@ -52,6 +80,8 @@ def getpathnparam():
     return param, path
 
 param, path = getpathnparam()
+if J21_theta == '0pi': path = f'./Dxt_storage/hsbg'
+
 """
 if param == 'xpa2b0':
     filepath = f'./{param}/L{L}/alpha_{alphastr}/{dtstr}'
@@ -62,13 +92,14 @@ else:
 filepath = path
 
 def getstepcount():
-    filenum = 33321
+    filenum = 16220 if J21_theta=='5piby20' else 33321
     Dxt_j = np.loadtxt(f'{filepath}/Dxt_{filenum}.dat', dtype=np.float128) #Dxt_{storefreq}_
     steps = int(Dxt_j.shape[0] / L)
     print('steps: ', steps)
     return steps
 
-steps = getstepcount()
+if J21_theta == '0pi': steps = 3201 # when filepath = /Dxt_storage/hsbg
+else: steps = getstepcount()
 
 with open(f'{filepath}/outdxt.txt', 'r') as Dxt_repo: ## outdxt{storefreq[-3:]}.txt
     Dxt_files = np.array([dxtarr for dxtarr in Dxt_repo.read().splitlines()])[begin:end]
@@ -84,8 +115,11 @@ print('Dxtavg_.shape: ', Dxtavg_.shape)
 print('steps : ', steps)
 
 def getDxtavg(Dxt_files, Dxtavg_):
-    for k, fk in enumerate(Dxt_files):
-        Dxtk = np.loadtxt(f'{filepath}/{fk}', dtype=np.float128).reshape(steps, L)
+    for k, fk in enumerate(Dxt_files): 
+        # when filepath = /Dxt_storage/hsbg
+        if J21_theta == '0pi': Dxtk = np.load(f'{filepath}/{fk}', 'r') 
+        else: Dxtk = np.loadtxt(f'{filepath}/{fk}', dtype=np.float128).reshape(steps, L)
+
         Dxtavg_ += Dxtk
     return Dxtavg_ #/ len(Dxt_files) # let us keep the averaging after calling the function
 
@@ -101,8 +135,10 @@ t_, x_ = Dxtavg.shape
 T = np.arange(0, t_)
 X = -0.5 * x_ + np.arange(0, x_)
 
+# the function used for parameter estimation through curve_fit 
 def f_empirical(xbyt, kappa_Lyap, V):
-    return kappa_Lyap * (1 - (t_fact * xbyt / V)**2)
+    # scaling the xdata (xbyvt) by J21_val to get the scaled values of V and K from curve-fitting itself
+    return kappa_Lyap * (1 - (t_fact * J21_val*xbyt /V)**2)
 
 def check_x_intercept(func):
     x_intercepts = []
@@ -110,10 +146,20 @@ def check_x_intercept(func):
         if fi * func[i+1] < 0:
             x_intercepts.append(i)
             break
+    # ensume x_intercepts is non-empty
     if not x_intercepts: pass
+    # return the first instance of a cone-boundary 
+    # for a single or low number of configurations, the f may not be monotonic
     else: return x_intercepts[0]
 
-t_fact = 10 #int(prefac / dtsymb) # prefac variable can be made redundant
+
+# Reasoning for the t_fact choice:
+# we are storing every 100 steps; 
+# so for dt=0.002: step_n = 1 is equivalent to 0.2 unit-time
+
+if dtsymb == 2: t_fact = 5 
+elif dtsymb == 1: t_fact = 10 ### no such thing: ## 5 if J21_theta=='5piby20' else 10
+elif dtsymb ==5: t_fact = 2 #int(prefac / dtsymb) # prefac variable can be made redundant
 tinit = int(sys.argv[9])
 
 # here the steps is 2521 for L=1024, dt = 0.002
@@ -127,9 +173,9 @@ if L == 2048:
 else:
 """
 if dtsymb==2:
-    tfinal = min(steps - t_fact * 60, 2401) 
+    tfinal = min(steps - t_fact * 100, 401)  # the change in the slope of the decorrelator happens around this point for dt=0.002
 if dtsymb==1:
-    tfinal = min(steps - t_fact * 120, 4801) 
+    tfinal = min(steps - t_fact * 100, 1001) # amd similarly for dt=0.001 
 
 
 cone_spread = np.arange(tinit, tfinal, t_fact)
@@ -147,24 +193,26 @@ def get_VB(time_range):
             if xcross is not None:
                 v = t_fact * xcross / t
                 V += v
-                print(f"Calculated v: {v}")
+                print(f"Calculated v from xcross: {v, xcross}")
                 
                 # The following conditionals are highly empirical:
-                if t < t_fact * 25:
-                    xdata = np.array([x for x in range(-2 + xcross, 3 + xcross)]) / t
-                    ydata = np.array([0.5 * t_fact * logDxt[t - 1, x] / t for x in range(-2 + xcross, 3 + xcross)])
-                    popt, pcov = curve_fit(f_empirical, xdata, ydata)
-                    kappa += popt[0]
-                    VB += popt[1]
-                    p_cov += pcov
+                #if t < t_fact * 50:
+                xdata = np.array([x for x in range(-2 + xcross, 2 + xcross)]) / t
+                ydata = np.array([0.5 * t_fact * logDxt[t - 1, x] / t for x in range(-2 + xcross, 2 + xcross)])
+                # xdata is input to the f_empirical, which along with the params defined in the function, tries to fit values to ydata
+                popt, pcov = curve_fit(f_empirical, xdata, ydata)
+                kappa += popt[0]
+                VB += popt[1]
+                p_cov += pcov
+                """
                 elif t < tfinal:
-                    xdata = np.array([x for x in range(-3 + xcross, 4 + xcross)]) / t
-                    ydata = np.array([0.5 * t_fact * logDxt[t - 1, x] / t for x in range(-3 + xcross, 4 + xcross)])
+                    xdata = np.array([x for x in range(-3 + xcross, 3 + xcross)]) / t
+                    ydata = np.array([0.5 * t_fact * logDxt[t - 1, x] / t for x in range(-3 + xcross, 3 + xcross)])
                     popt, pcov = curve_fit(f_empirical, xdata, ydata)
                     kappa += popt[0]
                     VB += popt[1]
                     p_cov += pcov
-            
+                """
             else:
                 print("xcross is None, skipping calculation.")
                 counts_None += 1
@@ -189,7 +237,7 @@ print('covariance matrix for kappa, VB: ', p_cov)
 print(f'Lyapunov exponent kappa: {kappa:0,.3f}(+/- {k_err:0,.3f})')
 print(f'butterfly velocity VB : {VB:0,.3f}(+/- {V_err:0,.3f})')
 
-with open(f'./Kappa_VB/kappa_Lyap_{param}_{J1J2comb}_{end - begin}configs_{tinit}.txt', 'w') as f:
+with open(f'./Kappa_VB/newfolder_scaled/kappa_Lyap_{param}_{J1J2comb}_{end - begin}configs_{tinit}.txt', 'w') as f:
     f.write(f'Lyapunov exponent kappa: {kappa:0,.3f}(+/- {k_err:0,.3f}) \n butterfly velocity VB : {VB:0,.3f}(+/- {V_err:0,.3f}) \n')
 
 def plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs):
@@ -229,5 +277,6 @@ def plot_logDxt():
     axes.set_xlim(0, Axlim2)
     fig.savefig(f'./plots/xcross_range/newlogDxtcomplete_L{L}_{param}_{J1J2comb}_{len(Dxt_files)}configs_{tinit}tinit.pdf')
 
-plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs)
-plot_logDxt()
+#plot_decorravg(X, T, Dxtavg, L, steps, param, J1J2comb, dtstr, configs)
+#plot_logDxt()
+
